@@ -1,0 +1,19 @@
+{
+  "name": "ai-agent-framework",
+  "version": "1.0.0",
+  "description": "A from-scratch AI Agent framework built with Node.js and TypeScript",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.7",
+    "typescript": "^7.0.2"
+  }
+}
