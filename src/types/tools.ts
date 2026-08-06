@@ -1,5 +1,7 @@
-import { ToolDefinition } from "./ToolDefinition";
+import { ToolDefinition } from "../types/ToolDefinition";
 
-export interface Tool extends ToolDefinition {
-    execute(input: unknown): Promise<unknown>;
+export interface Tool<TInput = unknown, TOutput = unknown> {
+    readonly definition: ToolDefinition;
+
+    execute(input: TInput): Promise<TOutput>;
 }

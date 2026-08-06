@@ -1,39 +1,32 @@
-import { ToolDefinition } from "../types/ToolDefinition";
 import { Tool } from "../types/tools";
+import { ToolDefinition } from "../types/ToolDefinition";
 
 export class ToolRegistry {
-    private tools = new Map<string, Tool>();
+    private readonly tools = new Map<string, Tool<any, any>>();
 
-    register(tool: Tool): void {
-        if (this.tools.has(tool.name)) {
+    register(tool: Tool<any, any>): void {
+        if (this.tools.has(tool.definition.name)) {
             throw new Error(
-                `Tool "${tool.name}" is already registered.`
+                `Tool '${tool.definition.name}' is already registered.`
             );
         }
 
-        this.tools.set(tool.name, tool);
+        this.tools.set(tool.definition.name, tool);
     }
 
-    get(name: string): Tool {
+    get(name: string): Tool<any, any> {
         const tool = this.tools.get(name);
-    
+
         if (!tool) {
             throw new Error(`Tool '${name}' not found.`);
         }
-    
+
         return tool;
     }
 
-    getAll(): Tool[] {
-        return Array.from(this.tools.values());
-    }
-
     getDefinitions(): ToolDefinition[] {
-        return Array.from(this.tools.values()).map(tool => ({
-            name: tool.name,
-            description: tool.description,
-            inputSchema: tool.inputSchema
-        }));
+        return Array.from(this.tools.values()).map(
+            tool => tool.definition
+        );
     }
 }
-
