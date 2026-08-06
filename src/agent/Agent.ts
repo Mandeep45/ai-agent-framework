@@ -15,14 +15,46 @@ export class Agent {
     async chat(message: string): Promise<AgentResponse> {
         this.addUserMessage(message);
 
-        const llmResponse = await this.generateResponse();
+        const maxIterations = 10;
+        let iteration = 0;
 
-        return this.buildResponse(llmResponse);
+        while (iteration < maxIterations) {
+            iteration++;
+
+            const response = await this.generateResponse();
+
+            if (response.isFinal) {
+                this.addAssistantMessage(
+                    response.message ?? ""
+                );
+
+                return this.buildResponse(response);
+            }
+
+            for (const toolCall of response.toolCalls) {
+                const result =
+                    await this.executeTool(toolCall);
+
+                this.addToolResult(
+                    toolCall.toolName,
+                    result
+                );
+            }
+        }
+
+        throw new Error("Maximum iterations exceeded.");
     }
 
     private addUserMessage(message: string): void {
         this.history.add({
             role: "user",
+            content: message
+        });
+    }
+
+    private addAssistantMessage(message: string): void {
+        this.history.add({
+            role: "assistant",
             content: message
         });
     }
@@ -37,9 +69,13 @@ export class Agent {
     private async executeTool(
         toolCall: ToolCall
     ): Promise<unknown> {
-        const tool = this.registry.get(toolCall.toolName);
+        const tool = this.registry.get(
+            toolCall.toolName
+        );
 
-        return tool.execute(toolCall.arguments);
+        return tool.execute(
+            toolCall.arguments
+        );
     }
 
     private addToolResult(
