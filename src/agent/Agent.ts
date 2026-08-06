@@ -1,62 +1,65 @@
 import { AgentResponse } from "../types/AgentResponse";
 import { LLMResponse } from "../types/LLMResponse";
 import { ToolCall } from "../types/ToolCall";
-import { MessageHistory } from "./MessageHistory";
 import { LLMProvider } from "../llm/LLMProvider";
 import { ToolRegistry } from "../registry/ToolRegistry";
+import { MessageHistory } from "./MessageHistory";
 
 export class Agent {
-  constructor(
-    private readonly registry: ToolRegistry,
-    private readonly history: MessageHistory,
-    private readonly llm: LLMProvider
-  ) {}
+    constructor(
+        private readonly registry: ToolRegistry,
+        private readonly history: MessageHistory,
+        private readonly llm: LLMProvider
+    ) {}
 
-  async chat(message: string): Promise<AgentResponse> {
-    this.addUserMessage(message);
+    async chat(message: string): Promise<AgentResponse> {
+        this.addUserMessage(message);
 
-    // Temporary integration test
-    const result = await this.executeTool({
-      toolName: "CustomerTool",
-      arguments: {
-        customerId: "ABC123",
-      },
-    });
+        const llmResponse = await this.generateResponse();
 
-    console.log("Tool Result:", result);
+        return this.buildResponse(llmResponse);
+    }
 
-    const llmResponse = await this.generateResponse();
+    private addUserMessage(message: string): void {
+        this.history.add({
+            role: "user",
+            content: message
+        });
+    }
 
-    return this.buildResponse(llmResponse);
-  }
+    private async generateResponse(): Promise<LLMResponse> {
+        return this.llm.generate(
+            this.history.getMessages(),
+            this.registry.getDefinitions()
+        );
+    }
 
-  private addUserMessage(message: string): void {
-    this.history.add({
-      role: "user",
-      content: message,
-    });
-  }
+    private async executeTool(
+        toolCall: ToolCall
+    ): Promise<unknown> {
+        const tool = this.registry.get(toolCall.toolName);
 
-  private async generateResponse(): Promise<LLMResponse> {
-    return this.llm.generate(
-      this.history.getMessages(),
-      this.registry.getDefinitions()
-    );
-  }
+        return tool.execute(toolCall.arguments);
+    }
 
-  private async executeTool(
-    toolCall: ToolCall
-  ): Promise<unknown> {
-    const tool = this.registry.get(toolCall.toolName);
+    private addToolResult(
+        toolName: string,
+        result: unknown
+    ): void {
+        this.history.add({
+            role: "tool",
+            content: JSON.stringify({
+                toolName,
+                result
+            })
+        });
+    }
 
-    return tool.execute(toolCall.arguments);
-  }
-
-  private buildResponse(
-    response: LLMResponse
-  ): AgentResponse {
-    return {
-      message: response.message ?? "",
-    };
-  }
+    private buildResponse(
+        response: LLMResponse
+    ): AgentResponse {
+        return {
+            message: response.message ?? ""
+        };
+    }
 }
