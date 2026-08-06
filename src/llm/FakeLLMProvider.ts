@@ -1,9 +1,10 @@
 import { LLMProvider } from "./LLMProvider";
 import { Tool } from "../types/tools";
+import { Message } from "../types/message";
 
 export class FakeLLMProvider implements LLMProvider {
     async generate(
-        messages: string[],
+        messages: Message[],
         tools: Tool[]
     ): Promise<string> {
 
