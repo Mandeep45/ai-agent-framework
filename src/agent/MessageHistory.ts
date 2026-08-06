@@ -7,8 +7,8 @@ export class MessageHistory {
         this.messages.push(message);
     }
 
-    getAll(): Message[] {
-        return this.messages;
+    getMessages(): Message[] {
+        return [...this.messages];
     }
 
     clear(): void {

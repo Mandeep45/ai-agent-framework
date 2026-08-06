@@ -14,8 +14,14 @@ export class ToolRegistry {
         this.tools.set(tool.name, tool);
     }
 
-    get(name: string): Tool | undefined {
-        return this.tools.get(name);
+    get(name: string): Tool {
+        const tool = this.tools.get(name);
+    
+        if (!tool) {
+            throw new Error(`Tool '${name}' not found.`);
+        }
+    
+        return tool;
     }
 
     getAll(): Tool[] {
