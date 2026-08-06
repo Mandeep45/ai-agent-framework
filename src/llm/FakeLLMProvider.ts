@@ -4,7 +4,6 @@ import { ToolDefinition } from "../types/ToolDefinition";
 import { LLMResponse } from "../types/LLMResponse";
 
 export class FakeLLMProvider implements LLMProvider {
-
     async generate(
         messages: Message[],
         tools: ToolDefinition[]
@@ -16,11 +15,13 @@ export class FakeLLMProvider implements LLMProvider {
             tools.map(tool => tool.name)
         );
 
-        const hasToolResult = messages.some(
-            message => message.role === "tool"
+        const customerResult = messages.find(
+            message =>
+                message.role === "tool" &&
+                message.toolName === "CustomerTool"
         );
 
-        if (!hasToolResult) {
+        if (!customerResult) {
             return {
                 isFinal: false,
                 message: "",
@@ -28,17 +29,23 @@ export class FakeLLMProvider implements LLMProvider {
                     {
                         toolName: "CustomerTool",
                         arguments: {
-                            customerId: "ABC123"
-                        }
-                    }
-                ]
+                            customerId: "ABC123",
+                        },
+                    },
+                ],
             };
         }
 
+        const customer = customerResult.content as {
+            id: string;
+            name: string;
+            email: string;
+        };
+
         return {
             isFinal: true,
-            message: "Customer ABC123 found successfully.",
-            toolCalls: []
+            message: `Customer ${customer.name} (${customer.id}) found successfully.`,
+            toolCalls: [],
         };
     }
 }

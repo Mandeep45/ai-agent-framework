@@ -24,16 +24,13 @@ export class Agent {
             const response = await this.generateResponse();
 
             if (response.isFinal) {
-                this.addAssistantMessage(
-                    response.message ?? ""
-                );
+                this.addAssistantMessage(response.message ?? "");
 
                 return this.buildResponse(response);
             }
 
             for (const toolCall of response.toolCalls) {
-                const result =
-                    await this.executeTool(toolCall);
+                const result = await this.executeTool(toolCall);
 
                 this.addToolResult(
                     toolCall.toolName,
@@ -48,14 +45,14 @@ export class Agent {
     private addUserMessage(message: string): void {
         this.history.add({
             role: "user",
-            content: message
+            content: message,
         });
     }
 
     private addAssistantMessage(message: string): void {
         this.history.add({
             role: "assistant",
-            content: message
+            content: message,
         });
     }
 
@@ -73,9 +70,7 @@ export class Agent {
             toolCall.toolName
         );
 
-        return tool.execute(
-            toolCall.arguments
-        );
+        return tool.execute(toolCall.arguments);
     }
 
     private addToolResult(
@@ -84,10 +79,8 @@ export class Agent {
     ): void {
         this.history.add({
             role: "tool",
-            content: JSON.stringify({
-                toolName,
-                result
-            })
+            toolName,
+            content: result,
         });
     }
 
@@ -95,7 +88,7 @@ export class Agent {
         response: LLMResponse
     ): AgentResponse {
         return {
-            message: response.message ?? ""
+            message: response.message ?? "",
         };
     }
 }
