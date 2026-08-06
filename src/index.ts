@@ -3,8 +3,16 @@ import { MessageHistory } from "./agent/MessageHistory";
 import { FakeLLMProvider } from "./llm/FakeLLMProvider";
 import { ToolRegistry } from "./registry/ToolRegistry";
 
+import { CustomerService } from "./services/CustomerService";
+import { CustomerTool } from "./tools/CustomerTool";
+
 async function main() {
   const registry = new ToolRegistry();
+
+  const customerService = new CustomerService();
+  const customerTool = new CustomerTool(customerService);
+
+  registry.register(customerTool);
 
   const history = new MessageHistory();
 
@@ -16,7 +24,10 @@ async function main() {
     llm
   );
 
-  const response = await agent.chat("Hello");
+  console.log("Registered Tools:");
+  console.log(registry.getDefinitions());
+
+  const response = await agent.chat("Find customer ABC");
 
   console.log(response);
 }

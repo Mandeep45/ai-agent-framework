@@ -26,11 +26,11 @@ export class Agent {
     // Store assistant response
     this.history.add({
       role: "assistant",
-      content: response,
+      content: response.message || "",
     });
 
     return {
-        message: response
+        message: response.message || ""
     };
   }
 }

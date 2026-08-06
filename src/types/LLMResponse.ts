@@ -1,6 +1,7 @@
+import { ToolCall } from "./ToolCall";
+
 export interface LLMResponse {
-    type: "message" | "tool_call";
-    message?: string;
-    toolName?: string;
-    arguments?: unknown;
+  isFinal: boolean;
+  message?: string;
+  toolCalls: ToolCall[];
 }
