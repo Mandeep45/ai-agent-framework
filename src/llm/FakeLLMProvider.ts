@@ -1,22 +1,29 @@
 import { LLMProvider } from "./LLMProvider";
+import { Logger } from "../logger/Logger";
 import { Message } from "../types/message";
 import { ToolDefinition } from "../types/ToolDefinition";
 import { LLMResponse } from "../types/LLMResponse";
+import { Customer } from "../types/Customer";
 
 export class FakeLLMProvider implements LLMProvider {
+    constructor(
+        private readonly logger: Logger
+    ) {}
+
     async generate(
         messages: Message[],
         tools: ToolDefinition[]
     ): Promise<LLMResponse> {
 
-        console.log("Messages:", messages);
-        console.log(
-            "Available Tools:",
-            tools.map(tool => tool.name)
+        this.logger.info(
+            `Generating LLM response: ${JSON.stringify({
+                messages,
+                availableTools: tools.map(tool => tool.name),
+            })}`
         );
 
         const customerResult = messages.find(
-            message =>
+            (message) =>
                 message.role === "tool" &&
                 message.toolName === "CustomerTool"
         );
@@ -37,11 +44,7 @@ export class FakeLLMProvider implements LLMProvider {
             };
         }
 
-        const customer = customerResult.content as {
-            id: string;
-            name: string;
-            email: string;
-        };
+        const customer = customerResult.content as Customer;
 
         return {
             isFinal: true,

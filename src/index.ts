@@ -5,18 +5,20 @@ import { ToolRegistry } from "./registry/ToolRegistry";
 
 import { CustomerService } from "./services/CustomerService";
 import { CustomerTool } from "./tools/CustomerTool";
+import { ConsoleLogger } from "./logger/ConsoleLogger";
 
 async function main() {
   const registry = new ToolRegistry();
 
-  const customerService = new CustomerService();
+  const logger = new ConsoleLogger();
+  const customerService = new CustomerService(logger);
   const customerTool = new CustomerTool(customerService);
 
   registry.register(customerTool);
 
   const history = new MessageHistory();
 
-  const llm = new FakeLLMProvider();
+  const llm = new FakeLLMProvider(logger);
 
   const agent = new Agent(
     registry,
