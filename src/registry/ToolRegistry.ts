@@ -1,14 +1,13 @@
 import { Tool } from "../types/tools";
 import { ToolDefinition } from "../types/ToolDefinition";
+import { ToolNotFoundError } from "../errors/ToolNotFoundError";
 
 export class ToolRegistry {
     private readonly tools = new Map<string, Tool<any, any>>();
 
     register(tool: Tool<any, any>): void {
         if (this.tools.has(tool.definition.name)) {
-            throw new Error(
-                `Tool '${tool.definition.name}' is already registered.`
-            );
+            throw new ToolNotFoundError(tool.definition.name);
         }
 
         this.tools.set(tool.definition.name, tool);

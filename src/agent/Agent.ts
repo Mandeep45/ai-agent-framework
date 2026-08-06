@@ -4,21 +4,23 @@ import { ToolCall } from "../types/ToolCall";
 import { LLMProvider } from "../llm/LLMProvider";
 import { ToolRegistry } from "../registry/ToolRegistry";
 import { MessageHistory } from "./MessageHistory";
+import { AgentIterationError } from "../errors/AgentIterationError";
+import { ToolExecutionError } from "../errors/ToolExecutionError";
 
 export class Agent {
     constructor(
         private readonly registry: ToolRegistry,
         private readonly history: MessageHistory,
-        private readonly llm: LLMProvider
+        private readonly llm: LLMProvider,
+        private readonly maxIterations = 10
     ) {}
 
     async chat(message: string): Promise<AgentResponse> {
         this.addUserMessage(message);
 
-        const maxIterations = 10;
         let iteration = 0;
 
-        while (iteration < maxIterations) {
+        while (iteration < this.maxIterations) {
             iteration++;
 
             const response = await this.generateResponse();
@@ -39,7 +41,7 @@ export class Agent {
             }
         }
 
-        throw new Error("Maximum iterations exceeded.");
+        throw new AgentIterationError(this.maxIterations);
     }
 
     private addUserMessage(message: string): void {
@@ -66,11 +68,19 @@ export class Agent {
     private async executeTool(
         toolCall: ToolCall
     ): Promise<unknown> {
+    
         const tool = this.registry.get(
             toolCall.toolName
         );
-
-        return tool.execute(toolCall.arguments);
+    
+        try {
+            return await tool.execute(toolCall.arguments);
+        } catch (error) {
+            throw new ToolExecutionError(
+                toolCall.toolName,
+                error
+            );
+        }
     }
 
     private addToolResult(
