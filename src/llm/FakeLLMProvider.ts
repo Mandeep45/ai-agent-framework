@@ -27,6 +27,7 @@ export class FakeLLMProvider implements LLMProvider {
                 message: "",
                 toolCalls: [
                     {
+                        id: "tool-call-1",
                         toolName: "CustomerTool",
                         arguments: {
                             customerId: "ABC123",

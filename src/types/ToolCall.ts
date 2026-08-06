@@ -1,4 +1,5 @@
 export interface ToolCall {
-    toolName: string;
-    arguments: unknown;
-  }
+  id: string;
+  toolName: string;
+  arguments: unknown;
+}
