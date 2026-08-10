@@ -4,44 +4,50 @@ import { ToolCall } from "../types/ToolCall";
 import { LLMProvider } from "../llm/LLMProvider";
 import { ToolRegistry } from "../registry/ToolRegistry";
 import { MessageHistory } from "./MessageHistory";
-import { AgentIterationError } from "../errors/AgentIterationError";
-import { ToolExecutionError } from "../errors/ToolExecutionError";
 
 export class Agent {
     constructor(
         private readonly registry: ToolRegistry,
         private readonly history: MessageHistory,
-        private readonly llm: LLMProvider,
-        private readonly maxIterations = 10
+        private readonly llm: LLMProvider
     ) {}
 
     async chat(message: string): Promise<AgentResponse> {
         this.addUserMessage(message);
 
+        const maxIterations = 10;
         let iteration = 0;
 
-        while (iteration < this.maxIterations) {
+        while (iteration < maxIterations) {
             iteration++;
 
             const response = await this.generateResponse();
 
             if (response.isFinal) {
-                this.addAssistantMessage(response.message ?? "");
+                this.addAssistantMessage(
+                    response.message ?? ""
+                );
 
                 return this.buildResponse(response);
             }
 
             for (const toolCall of response.toolCalls) {
-                const result = await this.executeTool(toolCall);
+                this.addAssistantToolCall(toolCall);
+
+                const result = await this.executeTool(
+                    toolCall
+                );
 
                 this.addToolResult(
-                    toolCall.toolName,
+                    toolCall,
                     result
                 );
             }
         }
 
-        throw new AgentIterationError(this.maxIterations);
+        throw new Error(
+            `Agent exceeded the maximum iteration limit (${maxIterations}).`
+        );
     }
 
     private addUserMessage(message: string): void {
@@ -58,6 +64,17 @@ export class Agent {
         });
     }
 
+    private addAssistantToolCall(
+        toolCall: ToolCall
+    ): void {
+        this.history.add({
+            role: "assistant_tool_call",
+            toolCallId: toolCall.id,
+            toolName: toolCall.toolName,
+            arguments: toolCall.arguments,
+        });
+    }
+
     private async generateResponse(): Promise<LLMResponse> {
         return this.llm.generate(
             this.history.getMessages(),
@@ -68,28 +85,23 @@ export class Agent {
     private async executeTool(
         toolCall: ToolCall
     ): Promise<unknown> {
-    
         const tool = this.registry.get(
             toolCall.toolName
         );
-    
-        try {
-            return await tool.execute(toolCall.arguments);
-        } catch (error) {
-            throw new ToolExecutionError(
-                toolCall.toolName,
-                error
-            );
-        }
+
+        return tool.execute(
+            toolCall.arguments
+        );
     }
 
     private addToolResult(
-        toolName: string,
+        toolCall: ToolCall,
         result: unknown
     ): void {
         this.history.add({
             role: "tool",
-            toolName,
+            toolCallId: toolCall.id,
+            toolName: toolCall.toolName,
             content: result,
         });
     }
