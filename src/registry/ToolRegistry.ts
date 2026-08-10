@@ -7,8 +7,9 @@ export class ToolRegistry {
 
     register(tool: Tool<any, any>): void {
         if (this.tools.has(tool.definition.name)) {
-            throw new ToolNotFoundError(tool.definition.name);
+            throw new Error(`Tool '${tool.definition.name}' already exists.`);
         }
+        
 
         this.tools.set(tool.definition.name, tool);
     }
@@ -17,7 +18,7 @@ export class ToolRegistry {
         const tool = this.tools.get(name);
 
         if (!tool) {
-            throw new Error(`Tool '${name}' not found.`);
+            throw new ToolNotFoundError(name);
         }
 
         return tool;
