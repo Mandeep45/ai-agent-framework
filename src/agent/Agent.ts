@@ -1,6 +1,9 @@
 import { AgentResponse } from "../types/AgentResponse";
 import { LLMResponse } from "../types/LLMResponse";
 import { ToolCall } from "../types/ToolCall";
+import {
+    ToolExecutionResult,
+} from "../types/ToolExecutionResult";
 import { LLMProvider } from "../llm/LLMProvider";
 import { ToolRegistry } from "../registry/ToolRegistry";
 import { MessageHistory } from "./MessageHistory";
@@ -44,23 +47,25 @@ export class Agent {
                 );
             }
 
-            for (
-                const toolCall of response.toolCalls
-            ) {
-                this.addAssistantToolCall(
-                    toolCall
-                );
-
-                const result =
-                    await this.executeToolSafely(
-                        toolCall
-                    );
-
-                this.addToolResult(
-                    toolCall,
-                    result
-                );
+            for (const toolCall of response.toolCalls) {
+                this.addAssistantToolCall(toolCall);
             }
+            
+            const results = await Promise.all(
+                response.toolCalls.map(
+                    toolCall =>
+                        this.executeToolSafely(toolCall)
+                )
+            );
+            
+            response.toolCalls.forEach(
+                (toolCall, index) => {
+                    this.addToolResult(
+                        toolCall,
+                        results[index]
+                    );
+                }
+            );
         }
 
         throw new Error(
@@ -108,7 +113,7 @@ export class Agent {
 
     private async executeToolSafely(
         toolCall: ToolCall
-    ): Promise<unknown> {
+    ): Promise<ToolExecutionResult> {
 
         const tool =
             this.registry.get(
@@ -121,12 +126,20 @@ export class Agent {
                 toolCall.arguments
             );
 
-            return await this.withTimeout(
-                tool.execute(
-                    toolCall.arguments
-                ),
-                this.toolTimeoutMs
-            );
+            const data =
+                await this.withTimeout(
+                    tool.execute(
+                        toolCall.arguments
+                    ),
+                    this.toolTimeoutMs
+                );
+
+            return {
+                success: true,
+                toolCallId: toolCall.id,
+                toolName: toolCall.toolName,
+                data,
+            };
 
         } catch (error) {
 
@@ -137,24 +150,10 @@ export class Agent {
             ) {
                 return {
                     success: false,
+                    toolCallId: toolCall.id,
+                    toolName: toolCall.toolName,
                     error: {
                         type: "validation_error",
-                        toolName: toolCall.toolName,
-                        message: error.message,
-                    },
-                };
-            }
-
-            if (
-                error instanceof Error &&
-                error.name ===
-                    "ToolExecutionError"
-            ) {
-                return {
-                    success: false,
-                    error: {
-                        type: "execution_error",
-                        toolName: toolCall.toolName,
                         message: error.message,
                     },
                 };
@@ -167,21 +166,34 @@ export class Agent {
             ) {
                 return {
                     success: false,
+                    toolCallId: toolCall.id,
+                    toolName: toolCall.toolName,
                     error: {
                         type: "timeout_error",
-                        toolName: toolCall.toolName,
                         message: error.message,
                     },
                 };
             }
 
-            throw new ToolExecutionError(
-                toolCall.toolName,
-                error instanceof Error
-                    ? error.message
-                    : "Unknown error",
-                error
-            );
+            const executionError =
+                new ToolExecutionError(
+                    toolCall.toolName,
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error",
+                    error
+                );
+
+            return {
+                success: false,
+                toolCallId: toolCall.id,
+                toolName: toolCall.toolName,
+                error: {
+                    type: "execution_error",
+                    message:
+                        executionError.message,
+                },
+            };
         }
     }
 
@@ -190,27 +202,29 @@ export class Agent {
         timeoutMs: number
     ): Promise<T> {
 
-        let timeoutId: ReturnType<
-            typeof setTimeout
-        >;
+        let timeoutId:
+            ReturnType<typeof setTimeout>;
 
         const timeoutPromise =
             new Promise<never>(
                 (_, reject) => {
-                    timeoutId = setTimeout(
-                        () => {
-                            const error =
-                                new Error(
-                                    `Tool execution exceeded ${timeoutMs}ms.`
-                                );
 
-                            error.name =
-                                "ToolTimeoutError";
+                    timeoutId =
+                        setTimeout(
+                            () => {
 
-                            reject(error);
-                        },
-                        timeoutMs
-                    );
+                                const error =
+                                    new Error(
+                                        `Tool execution exceeded ${timeoutMs}ms.`
+                                    );
+
+                                error.name =
+                                    "ToolTimeoutError";
+
+                                reject(error);
+                            },
+                            timeoutMs
+                        );
                 }
             );
 
@@ -220,13 +234,15 @@ export class Agent {
                 timeoutPromise,
             ]);
         } finally {
-            clearTimeout(timeoutId!);
+            clearTimeout(
+                timeoutId!
+            );
         }
     }
 
     private addToolResult(
         toolCall: ToolCall,
-        result: unknown
+        result: ToolExecutionResult
     ): void {
 
         this.history.add({
