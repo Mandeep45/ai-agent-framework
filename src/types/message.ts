@@ -8,8 +8,16 @@ export interface AssistantMessage {
     content: string;
 }
 
+export interface AssistantToolCallMessage {
+    role: "assistant_tool_call";
+    toolCallId: string;
+    toolName: string;
+    arguments: unknown;
+}
+
 export interface ToolMessage {
     role: "tool";
+    toolCallId: string;
     toolName: string;
     content: unknown;
 }
@@ -17,4 +25,5 @@ export interface ToolMessage {
 export type Message =
     | UserMessage
     | AssistantMessage
+    | AssistantToolCallMessage
     | ToolMessage;

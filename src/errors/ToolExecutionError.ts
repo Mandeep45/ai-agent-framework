@@ -1,17 +1,13 @@
-import { FrameworkError } from "./FrameworkError";
-
-export class ToolExecutionError extends FrameworkError {
+export class ToolExecutionError extends Error {
     constructor(
-        toolName: string,
-        reason: unknown
+        public readonly toolName: string,
+        message: string,
+        public readonly cause?: unknown
     ) {
-        const message =
-            reason instanceof Error
-                ? reason.message
-                : String(reason);
-
         super(
-            `Failed to execute tool '${toolName}'. Reason: ${message}`
+            `Tool '${toolName}' execution failed: ${message}`
         );
+
+        this.name = "ToolExecutionError";
     }
 }
