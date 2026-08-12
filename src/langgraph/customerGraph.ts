@@ -11,24 +11,39 @@ import { createCustomerTool } from "./customerTool";
 import { CustomerService } from "../services/CustomerService";
 import { ConsoleLogger } from "../logger/ConsoleLogger";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { InventoryService } from "../services/InventoryService";
+import { createInventoryTool } from "./inventoryTool";
 
 const State = new StateSchema({
     messages: MessagesValue,
 });
 
 const logger = new ConsoleLogger();
-const customerService = new CustomerService(logger);
+const customerService =
+    new CustomerService(logger);
 
-const customerTool = createCustomerTool(
-    customerService
-);
+const inventoryService =
+    new InventoryService(logger);
+
+const customerTool =
+    createCustomerTool(
+        customerService
+    );
+
+const inventoryTool =
+    createInventoryTool(
+        inventoryService
+    );
+
+const model =
+    llm.bindTools([
+        customerTool,
+        inventoryTool,
+    ]);
 
 const toolNode = new ToolNode([
     customerTool,
-]);
-
-const model = llm.bindTools([
-    customerTool,
+    inventoryTool,
 ]);
 
 const llmNode = async (
@@ -50,7 +65,7 @@ const routeAfterLLM = (
 ) => {
     const lastMessage =
         state.messages[
-            state.messages.length - 1
+        state.messages.length - 1
         ];
 
     if (

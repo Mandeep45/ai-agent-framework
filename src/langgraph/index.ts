@@ -8,7 +8,7 @@ async function main() {
     const result = await graph.invoke({
         messages: [
             new HumanMessage(
-                "Find customer ABC"
+                "Find customer ABC and check inventory for product XYZ"
             ),
         ],
     });
