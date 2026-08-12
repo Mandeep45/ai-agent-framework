@@ -13,12 +13,15 @@ import { ConsoleLogger } from "../logger/ConsoleLogger";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { InventoryService } from "../services/InventoryService";
 import { createInventoryTool } from "./inventoryTool";
+import { MemorySaver } from "@langchain/langgraph";
+import z from "zod";
 
 const State = new StateSchema({
-    messages: MessagesValue,
+    messages: MessagesValue
 });
 
 const logger = new ConsoleLogger();
+const checkpointer = new MemorySaver();
 const customerService =
     new CustomerService(logger);
 
@@ -41,10 +44,15 @@ const model =
         inventoryTool,
     ]);
 
-const toolNode = new ToolNode([
-    customerTool,
-    inventoryTool,
-]);
+const toolNode = new ToolNode(
+    [
+        customerTool,
+        inventoryTool,
+    ],
+    {
+        handleToolErrors: true,
+    }
+);
 
 const llmNode = async (
     state: typeof State.State
@@ -80,13 +88,16 @@ const routeAfterLLM = (
     return END;
 };
 
+
+
 export const graph = new StateGraph(State)
     .addNode("llm", llmNode)
     .addNode("tools", toolNode)
     .addEdge(START, "llm")
+    .addEdge("tools","llm")
     .addConditionalEdges(
         "llm",
         routeAfterLLM
     )
-    .addEdge("tools", "llm")
-    .compile();
+    .compile({checkpointer});
+
