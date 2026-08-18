@@ -12,7 +12,8 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
-    "langgraph": "tsx src/langgraph/index.ts"
+    "langgraph": "tsx src/langgraph/index.ts",
+    "langgraph:approval": "tsx src/langgraph/approvalIndex.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
