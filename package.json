@@ -13,7 +13,8 @@
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "langgraph": "tsx src/langgraph/index.ts",
-    "langgraph:approval": "tsx src/langgraph/approvalIndex.ts"
+    "langgraph:approval": "tsx src/langgraph/approvalIndex.ts",
+    "mcp": "tsx src/mcp/client.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
@@ -24,6 +25,8 @@
     "@langchain/core": "^1.2.5",
     "@langchain/langgraph": "^1.4.9",
     "@langchain/openai": "^1.5.6",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
     "dotenv": "^17.4.2",
     "openai": "^7.4.0",
     "zod": "^4.4.3"
