@@ -7,26 +7,20 @@ import {
 import { LLMProvider } from "../llm/LLMProvider";
 import { ToolRegistry } from "../registry/ToolRegistry";
 import { MessageHistory } from "./MessageHistory";
-import { ToolValidator } from "../validation/ToolValidator";
-import { ToolExecutionError } from "../errors/ToolExecutionError";
-import { ApprovalPolicy } from "../approval/ApprovalPolicy";
-import { SimpleApprovalPolicy } from "../approval/SimpleApprovalPolicy";
-import { ApprovalService } from "../approval/ApprovalService";
-import { CliApprovalService } from "../approval/CliApprovalService";
+import { ToolExecutionService } from "../application/ToolExecutionService";
 
 export class Agent {
     private readonly maxIterations = 10;
-    private readonly toolTimeoutMs = 5000;
 
     constructor(
         private readonly registry: ToolRegistry,
         private readonly history: MessageHistory,
         private readonly llm: LLMProvider,
-        private readonly validator = new ToolValidator(),
-        private readonly approvalPolicy: ApprovalPolicy =
-            new SimpleApprovalPolicy(),
-        private readonly approvalService: ApprovalService =
-            new CliApprovalService()
+        private readonly toolExecutionService:
+            ToolExecutionService =
+                new ToolExecutionService(
+                    registry
+                )
     ) {}
 
     async chat(
@@ -59,12 +53,15 @@ export class Agent {
                 this.addAssistantToolCall(toolCall);
             }
 
-            const results = await Promise.all(
-                response.toolCalls.map(
-                    toolCall =>
-                        this.executeToolSafely(toolCall)
-                )
-            );
+            const results =
+                await Promise.all(
+                    response.toolCalls.map(
+                        toolCall =>
+                            this.executeToolSafely(
+                                toolCall
+                            )
+                    )
+                );
 
             response.toolCalls.forEach(
                 (toolCall, index) => {
@@ -123,167 +120,9 @@ export class Agent {
         toolCall: ToolCall
     ): Promise<ToolExecutionResult> {
 
-        const tool =
-            this.registry.get(
-                toolCall.toolName
-            );
-
-        const requiresApproval =
-            this.approvalPolicy.requiresApproval(
-                toolCall
-            );
-
-        console.log(
-            `[Approval] ${toolCall.toolName}: ${
-                requiresApproval
-                    ? "REQUIRED"
-                    : "NOT REQUIRED"
-            }`
+        return this.toolExecutionService.execute(
+            toolCall
         );
-
-        if (requiresApproval) {
-
-            const approved =
-                await this.approvalService.requestApproval(
-                    toolCall
-                );
-
-            if (!approved) {
-                return {
-                    success: false,
-                    toolCallId: toolCall.id,
-                    toolName: toolCall.toolName,
-                    error: {
-                        type: "approval_rejected",
-                        message:
-                            "Human approval was rejected.",
-                    },
-                };
-            }
-
-            console.log(
-                `[Approval] ${toolCall.toolName}: APPROVED`
-            );
-        }
-
-        try {
-            this.validator.validate(
-                tool.definition,
-                toolCall.arguments
-            );
-
-            const data =
-                await this.withTimeout(
-                    tool.execute(
-                        toolCall.arguments
-                    ),
-                    this.toolTimeoutMs
-                );
-
-            return {
-                success: true,
-                toolCallId: toolCall.id,
-                toolName: toolCall.toolName,
-                data,
-            };
-
-        } catch (error) {
-
-            if (
-                error instanceof Error &&
-                error.name ===
-                    "ToolValidationError"
-            ) {
-                return {
-                    success: false,
-                    toolCallId: toolCall.id,
-                    toolName: toolCall.toolName,
-                    error: {
-                        type: "validation_error",
-                        message: error.message,
-                    },
-                };
-            }
-
-            if (
-                error instanceof Error &&
-                error.name ===
-                    "ToolTimeoutError"
-            ) {
-                return {
-                    success: false,
-                    toolCallId: toolCall.id,
-                    toolName: toolCall.toolName,
-                    error: {
-                        type: "timeout_error",
-                        message: error.message,
-                    },
-                };
-            }
-
-            const executionError =
-                new ToolExecutionError(
-                    toolCall.toolName,
-                    error instanceof Error
-                        ? error.message
-                        : "Unknown error",
-                    error
-                );
-
-            return {
-                success: false,
-                toolCallId: toolCall.id,
-                toolName: toolCall.toolName,
-                error: {
-                    type: "execution_error",
-                    message:
-                        executionError.message,
-                },
-            };
-        }
-    }
-
-    private async withTimeout<T>(
-        promise: Promise<T>,
-        timeoutMs: number
-    ): Promise<T> {
-
-        let timeoutId:
-            ReturnType<typeof setTimeout>;
-
-        const timeoutPromise =
-            new Promise<never>(
-                (_, reject) => {
-
-                    timeoutId =
-                        setTimeout(
-                            () => {
-
-                                const error =
-                                    new Error(
-                                        `Tool execution exceeded ${timeoutMs}ms.`
-                                    );
-
-                                error.name =
-                                    "ToolTimeoutError";
-
-                                reject(error);
-                            },
-                            timeoutMs
-                        );
-                }
-            );
-
-        try {
-            return await Promise.race([
-                promise,
-                timeoutPromise,
-            ]);
-        } finally {
-            clearTimeout(
-                timeoutId!
-            );
-        }
     }
 
     private addToolResult(

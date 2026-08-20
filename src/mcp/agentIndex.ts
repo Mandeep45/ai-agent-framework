@@ -64,7 +64,7 @@ async function main() {
 
     const response =
         await agent.chat(
-            "Place 1 unit of product XYZ for customer ABC."
+            "Place 1 unit of product XYZ for customer ABC"
         );
 
     console.log(
