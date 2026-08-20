@@ -13,7 +13,8 @@ export interface ToolExecutionFailure {
         type:
             | "validation_error"
             | "execution_error"
-            | "timeout_error";
+            | "timeout_error"
+            | "approval_rejected";
         message: string;
     };
 }

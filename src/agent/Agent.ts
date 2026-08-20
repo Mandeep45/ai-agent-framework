@@ -9,6 +9,10 @@ import { ToolRegistry } from "../registry/ToolRegistry";
 import { MessageHistory } from "./MessageHistory";
 import { ToolValidator } from "../validation/ToolValidator";
 import { ToolExecutionError } from "../errors/ToolExecutionError";
+import { ApprovalPolicy } from "../approval/ApprovalPolicy";
+import { SimpleApprovalPolicy } from "../approval/SimpleApprovalPolicy";
+import { ApprovalService } from "../approval/ApprovalService";
+import { CliApprovalService } from "../approval/CliApprovalService";
 
 export class Agent {
     private readonly maxIterations = 10;
@@ -18,7 +22,11 @@ export class Agent {
         private readonly registry: ToolRegistry,
         private readonly history: MessageHistory,
         private readonly llm: LLMProvider,
-        private readonly validator = new ToolValidator()
+        private readonly validator = new ToolValidator(),
+        private readonly approvalPolicy: ApprovalPolicy =
+            new SimpleApprovalPolicy(),
+        private readonly approvalService: ApprovalService =
+            new CliApprovalService()
     ) {}
 
     async chat(
@@ -50,14 +58,14 @@ export class Agent {
             for (const toolCall of response.toolCalls) {
                 this.addAssistantToolCall(toolCall);
             }
-            
+
             const results = await Promise.all(
                 response.toolCalls.map(
                     toolCall =>
                         this.executeToolSafely(toolCall)
                 )
             );
-            
+
             response.toolCalls.forEach(
                 (toolCall, index) => {
                     this.addToolResult(
@@ -119,6 +127,44 @@ export class Agent {
             this.registry.get(
                 toolCall.toolName
             );
+
+        const requiresApproval =
+            this.approvalPolicy.requiresApproval(
+                toolCall
+            );
+
+        console.log(
+            `[Approval] ${toolCall.toolName}: ${
+                requiresApproval
+                    ? "REQUIRED"
+                    : "NOT REQUIRED"
+            }`
+        );
+
+        if (requiresApproval) {
+
+            const approved =
+                await this.approvalService.requestApproval(
+                    toolCall
+                );
+
+            if (!approved) {
+                return {
+                    success: false,
+                    toolCallId: toolCall.id,
+                    toolName: toolCall.toolName,
+                    error: {
+                        type: "approval_rejected",
+                        message:
+                            "Human approval was rejected.",
+                    },
+                };
+            }
+
+            console.log(
+                `[Approval] ${toolCall.toolName}: APPROVED`
+            );
+        }
 
         try {
             this.validator.validate(

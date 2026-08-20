@@ -14,7 +14,8 @@
     "test": "tsx --test tests/**/*.test.ts",
     "langgraph": "tsx src/langgraph/index.ts",
     "langgraph:approval": "tsx src/langgraph/approvalIndex.ts",
-    "mcp": "tsx src/mcp/client.ts"
+    "mcp": "tsx src/mcp/client.ts",
+    "mcp:agent": "tsx src/mcp/agentIndex.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
