@@ -24,6 +24,10 @@ import {
     CliApprovalHandler,
 } from "../approval/CliApprovalHandler";
 
+import {
+    AgentLogger,
+} from "../logger/AgentLogger";
+
 
 const MAX_TURNS = 10;
 const RUN_TIMEOUT_MS = 60_000;
@@ -39,42 +43,90 @@ function createRunSignal(): AbortSignal {
 
 async function runAgent(
     agent: Agent,
-    input: string | any
+    input: string | any,
+    logger: AgentLogger
 ) {
 
-    return run(
-        agent,
-        input,
-        {
-            maxTurns: MAX_TURNS,
-            signal: createRunSignal(),
-        }
+    const startTime =
+        Date.now();
+
+    logger.info(
+        "Agent run started"
     );
+
+    try {
+
+        const result =
+            await run(
+                agent,
+                input,
+                {
+                    maxTurns: MAX_TURNS,
+                    signal: createRunSignal(),
+                }
+            );
+
+        logger.info(
+            "Agent run segment completed",
+            {
+                durationMs:
+                    Date.now() - startTime,
+            }
+        );
+
+        return result;
+
+    } catch (error) {
+
+        logger.error(
+            "Agent run segment failed",
+            {
+                durationMs:
+                    Date.now() - startTime,
+
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : String(error),
+            }
+        );
+
+        throw error;
+    }
 }
 
 
 async function main() {
 
-    let mcpServer:
-        MCPServerStdio | undefined;
+    const logger =
+        new AgentLogger();
 
-    /*
-     * Approval handling is now injected.
-     *
-     * The Agent does not know whether approval
-     * comes from CLI, backend, UI, etc.
-     */
     const approvalHandler:
         ApprovalHandler =
             new CliApprovalHandler();
+
+    let mcpServer:
+        MCPServerStdio | undefined;
+
+    logger.info(
+        "Agent application starting"
+    );
 
     try {
 
         /*
          * Create model.
          */
+        logger.info(
+            "Creating LLM model"
+        );
+
         const groqModel =
             await createGroqModel();
+
+        logger.info(
+            "LLM model created"
+        );
 
         /*
          * Create MCP server.
@@ -96,18 +148,40 @@ async function main() {
                     15000,
             });
 
+        logger.info(
+            "MCP server configured"
+        );
+
         /*
          * Connect to MCP server.
          */
         try {
 
+            logger.info(
+                "Connecting to MCP server"
+            );
+
             await mcpServer.connect();
+
+            logger.info(
+                "Connected to MCP server"
+            );
 
             console.log(
                 "Connected to MCP server."
             );
 
         } catch (error) {
+
+            logger.error(
+                "Failed to connect to MCP server",
+                {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : String(error),
+                }
+            );
 
             console.error(
                 "\n[ERROR] Failed to connect to MCP server."
@@ -129,10 +203,34 @@ async function main() {
 
         try {
 
+            logger.info(
+                "Discovering MCP tools"
+            );
+
             mcpTools =
                 await mcpServer.listTools();
 
+            logger.info(
+                "MCP tools discovered",
+                {
+                    tools:
+                        mcpTools.map(
+                            tool => tool.name
+                        ),
+                }
+            );
+
         } catch (error) {
+
+            logger.error(
+                "Failed to discover MCP tools",
+                {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : String(error),
+                }
+            );
 
             console.error(
                 "\n[ERROR] Failed to discover MCP tools."
@@ -182,6 +280,14 @@ async function main() {
 
         if (!placeOrderTool) {
 
+            logger.error(
+                "Required MCP tool was not found",
+                {
+                    toolName:
+                        "place_order",
+                }
+            );
+
             throw new Error(
                 "place_order MCP tool was not found."
             );
@@ -193,6 +299,16 @@ async function main() {
          */
         placeOrderTool.needsApproval =
             async () => true;
+
+        logger.info(
+            "Approval policy configured",
+            {
+                toolName:
+                    "place_order",
+                requiresApproval:
+                    true,
+            }
+        );
 
         /*
          * Create agent.
@@ -258,6 +374,14 @@ async function main() {
                 tools,
             });
 
+        logger.info(
+            "Agent created",
+            {
+                agentName:
+                    "Order Assistant",
+            }
+        );
+
         /*
          * Initial agent run.
          */
@@ -269,12 +393,16 @@ async function main() {
                 await runAgent(
                     agent,
                     "Find customer ABC, check inventory for product XYZ, " +
-                    "and place an order for 1 unit of product XYZ."
+                    "and place an order for 1 unit of product XYZ.",
+                    logger
                 );
 
         } catch (error) {
 
-            handleRunError(error);
+            handleRunError(
+                error,
+                logger
+            );
 
             return;
         }
@@ -286,6 +414,14 @@ async function main() {
             result.interruptions &&
             result.interruptions.length > 0
         ) {
+
+            logger.info(
+                "Agent execution interrupted for approval",
+                {
+                    interruptionCount:
+                        result.interruptions.length,
+                }
+            );
 
             for (
                 const interruption
@@ -300,14 +436,15 @@ async function main() {
                     interruption.arguments ??
                     "{}";
 
-                /*
-                 * Approval is delegated to the
-                 * configured ApprovalHandler.
-                 *
-                 * The Agent does not care whether
-                 * approval comes from CLI, API, UI,
-                 * or another system.
-                 */
+                logger.info(
+                    "Approval requested",
+                    {
+                        toolName,
+                        arguments:
+                            argumentsJson,
+                    }
+                );
+
                 const approved =
                     await approvalHandler
                         .requestApproval({
@@ -316,6 +453,13 @@ async function main() {
                         });
 
                 if (approved) {
+
+                    logger.info(
+                        "Tool approval granted",
+                        {
+                            toolName,
+                        }
+                    );
 
                     console.log(
                         `[Approval] ${toolName}: APPROVED`
@@ -326,6 +470,13 @@ async function main() {
                     );
 
                 } else {
+
+                    logger.warn(
+                        "Tool approval rejected",
+                        {
+                            toolName,
+                        }
+                    );
 
                     console.log(
                         `[Approval] ${toolName}: REJECTED`
@@ -349,16 +500,24 @@ async function main() {
                 result =
                     await runAgent(
                         agent,
-                        result.state
+                        result.state,
+                        logger
                     );
 
             } catch (error) {
 
-                handleRunError(error);
+                handleRunError(
+                    error,
+                    logger
+                );
 
                 return;
             }
         }
+
+        logger.info(
+            "Agent run completed successfully"
+        );
 
         console.log(
             "\nAgent response:\n"
@@ -370,9 +529,16 @@ async function main() {
 
     } catch (error) {
 
-        /*
-         * Last-resort protection.
-         */
+        logger.error(
+            "Unhandled agent application error",
+            {
+                error:
+                    error instanceof Error
+                        ? error.message
+                        : String(error),
+            }
+        );
+
         console.error(
             "\n[ERROR] Agent execution failed."
         );
@@ -394,11 +560,25 @@ async function main() {
 
                 await mcpServer.close();
 
+                logger.info(
+                    "MCP server closed"
+                );
+
                 console.log(
                     "\nMCP server closed."
                 );
 
             } catch (error) {
+
+                logger.error(
+                    "Failed to close MCP server",
+                    {
+                        error:
+                            error instanceof Error
+                                ? error.message
+                                : String(error),
+                    }
+                );
 
                 console.error(
                     "[ERROR] Failed to close MCP server."
@@ -411,17 +591,30 @@ async function main() {
                 );
             }
         }
+
+        logger.info(
+            "Agent application stopped"
+        );
     }
 }
 
 
 function handleRunError(
-    error: unknown
+    error: unknown,
+    logger: AgentLogger
 ): void {
 
     if (
         error instanceof MaxTurnsExceededError
     ) {
+
+        logger.error(
+            "Agent reached maximum number of turns",
+            {
+                maxTurns:
+                    MAX_TURNS,
+            }
+        );
 
         console.error(
             "\n[ERROR] Agent reached the maximum number of turns."
@@ -438,6 +631,14 @@ function handleRunError(
         error instanceof ModelTimeoutError
     ) {
 
+        logger.error(
+            "Model request timed out",
+            {
+                timeoutMs:
+                    RUN_TIMEOUT_MS,
+            }
+        );
+
         console.error(
             "\n[ERROR] Model request timed out."
         );
@@ -453,6 +654,10 @@ function handleRunError(
         error instanceof ToolTimeoutError
     ) {
 
+        logger.error(
+            "Tool execution timed out"
+        );
+
         console.error(
             "\n[ERROR] Tool execution timed out."
         );
@@ -463,6 +668,14 @@ function handleRunError(
     if (
         error instanceof ToolCallError
     ) {
+
+        logger.error(
+            "MCP tool execution failed",
+            {
+                error:
+                    error.message,
+            }
+        );
 
         console.error(
             "\n[ERROR] MCP tool execution failed."
@@ -479,6 +692,14 @@ function handleRunError(
         error instanceof ModelBehaviorError
     ) {
 
+        logger.error(
+            "Model produced invalid agent behavior",
+            {
+                error:
+                    error.message,
+            }
+        );
+
         console.error(
             "\n[ERROR] Model produced invalid agent behavior."
         );
@@ -494,6 +715,14 @@ function handleRunError(
         error instanceof Error
     ) {
 
+        logger.error(
+            "Agent execution failed",
+            {
+                error:
+                    error.message,
+            }
+        );
+
         console.error(
             "\n[ERROR] Agent execution failed."
         );
@@ -504,6 +733,14 @@ function handleRunError(
 
         return;
     }
+
+    logger.error(
+        "Unknown agent execution failure",
+        {
+            error:
+                String(error),
+        }
+    );
 
     console.error(
         "\n[ERROR] Unknown agent execution failure."
