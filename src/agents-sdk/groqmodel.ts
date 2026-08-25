@@ -1,18 +1,35 @@
-import { OpenAIProvider } from "@openai/agents";
+import {
+    OpenAIProvider,
+} from "@openai/agents";
+
+import {
+    config,
+} from "../config";
+
 
 export async function createGroqModel() {
-    const groqProvider =
+
+    if (
+        !config.groq.apiKey
+    ) {
+        throw new Error(
+            "GROQ_API_KEY is not configured."
+        );
+    }
+
+    const provider =
         new OpenAIProvider({
             apiKey:
-                process.env.GROQ_API_KEY,
+                config.groq.apiKey,
 
             baseURL:
                 "https://api.groq.com/openai/v1",
 
-            useResponses: false,
+            useResponses:
+                false,
         });
 
-    return groqProvider.getModel(
-        "openai/gpt-oss-20b"
+    return provider.getModel(
+        config.groq.model
     );
 }

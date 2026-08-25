@@ -28,15 +28,19 @@ import {
     AgentLogger,
 } from "../logger/AgentLogger";
 
+import {
+    config,
+} from "../config";
 
-const MAX_TURNS = 10;
-const RUN_TIMEOUT_MS = 60_000;
+import {
+    validateMcpTools,
+} from "../security/ToolSecurityPolicy";
 
 
 function createRunSignal(): AbortSignal {
 
     return AbortSignal.timeout(
-        RUN_TIMEOUT_MS
+        config.agent.runTimeoutMs
     );
 }
 
@@ -61,8 +65,11 @@ async function runAgent(
                 agent,
                 input,
                 {
-                    maxTurns: MAX_TURNS,
-                    signal: createRunSignal(),
+                    maxTurns:
+                        config.agent.maxTurns,
+
+                    signal:
+                        createRunSignal(),
                 }
             );
 
@@ -103,7 +110,7 @@ async function main() {
 
     const approvalHandler:
         ApprovalHandler =
-            new CliApprovalHandler();
+        new CliApprovalHandler();
 
     let mcpServer:
         MCPServerStdio | undefined;
@@ -118,7 +125,11 @@ async function main() {
          * Create model.
          */
         logger.info(
-            "Creating LLM model"
+            "Creating LLM model",
+            {
+                model:
+                    config.groq.model,
+            }
         );
 
         const groqModel =
@@ -135,21 +146,34 @@ async function main() {
             new MCPServerStdio({
 
                 name:
-                    "Order MCP Server",
+                    config.mcp.name,
 
                 command:
-                    "tsx",
+                    config.mcp.command,
 
                 args: [
-                    "src/mcp/server.ts",
+                    config.mcp.serverPath,
                 ],
 
                 timeout:
-                    15000,
+                    config.mcp.timeoutMs,
             });
 
         logger.info(
-            "MCP server configured"
+            "MCP server configured",
+            {
+                name:
+                    config.mcp.name,
+
+                command:
+                    config.mcp.command,
+
+                serverPath:
+                    config.mcp.serverPath,
+
+                timeoutMs:
+                    config.mcp.timeoutMs,
+            }
         );
 
         /*
@@ -209,6 +233,15 @@ async function main() {
 
             mcpTools =
                 await mcpServer.listTools();
+
+            const discoveredToolNames =
+                mcpTools.map(
+                    tool => tool.name
+                );
+
+            validateMcpTools(
+                discoveredToolNames
+            );
 
             logger.info(
                 "MCP tools discovered",
@@ -305,6 +338,7 @@ async function main() {
             {
                 toolName:
                     "place_order",
+
                 requiresApproval:
                     true,
             }
@@ -392,8 +426,10 @@ async function main() {
             result =
                 await runAgent(
                     agent,
+
                     "Find customer ABC, check inventory for product XYZ, " +
                     "and place an order for 1 unit of product XYZ.",
+
                     logger
                 );
 
@@ -551,9 +587,6 @@ async function main() {
 
     } finally {
 
-        /*
-         * Always close MCP server.
-         */
         if (mcpServer) {
 
             try {
@@ -612,7 +645,7 @@ function handleRunError(
             "Agent reached maximum number of turns",
             {
                 maxTurns:
-                    MAX_TURNS,
+                    config.agent.maxTurns,
             }
         );
 
@@ -621,7 +654,7 @@ function handleRunError(
         );
 
         console.error(
-            `Maximum allowed turns: ${MAX_TURNS}`
+            `Maximum allowed turns: ${config.agent.maxTurns}`
         );
 
         return;
@@ -635,7 +668,7 @@ function handleRunError(
             "Model request timed out",
             {
                 timeoutMs:
-                    RUN_TIMEOUT_MS,
+                    config.agent.runTimeoutMs,
             }
         );
 
@@ -644,7 +677,7 @@ function handleRunError(
         );
 
         console.error(
-            `Run timeout: ${RUN_TIMEOUT_MS}ms`
+            `Run timeout: ${config.agent.runTimeoutMs}ms`
         );
 
         return;
