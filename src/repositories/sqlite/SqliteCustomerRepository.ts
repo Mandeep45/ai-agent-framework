@@ -1,9 +1,9 @@
 import type Database from "better-sqlite3";
 
-import { Customer } from "../types/Customer";
+import { Customer } from "../../types/Customer";
 import {
     CustomerRepository,
-} from "../repositories/CustomerRepository";
+} from "../CustomerRepository";
 
 
 export class SqliteCustomerRepository
@@ -14,9 +14,9 @@ export class SqliteCustomerRepository
             Database.Database
     ) {}
 
-    findById(
+    async findById(
         customerId: string
-    ): Customer | null {
+    ): Promise<Customer | null> {
 
         const row =
             this.db.prepare(`

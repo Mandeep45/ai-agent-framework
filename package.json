@@ -11,11 +11,17 @@
   ],
   "scripts": {
     "dev": "tsx src/index.ts",
+    "predev:api": "tsx scripts/free-port.ts 3001",
     "dev:api": "tsx watch apps/api/src/server.ts",
+    "predev:web": "tsx scripts/free-port.ts 5173",
     "dev:web": "vite --config apps/web/vite.config.ts",
-    "dev:app": "concurrently -k -n api,web -c blue,green \"tsx watch apps/api/src/server.ts\" \"vite --config apps/web/vite.config.ts\"",
-    "build": "tsc",
-    "build:app": "tsc -p apps/api/tsconfig.json && vite build --config apps/web/vite.config.ts",
+    "predev:app": "tsx scripts/free-port.ts 3001 && tsx scripts/free-port.ts 5173",
+    "dev:app": "concurrently -k -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+    "build": "tsc -p tsconfig.build.json",
+    "build:web": "vite build --config apps/web/vite.config.ts",
+    "build:app": "npm run build && npm run build:web",
+    "start:api": "cross-env NODE_ENV=production node dist/apps/api/src/server.js",
+    "start:prod": "npm run start:api",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
@@ -29,7 +35,10 @@
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.2.0",
+    "@types/pg": "^8.23.1",
     "concurrently": "^9.1.2",
+    "cross-env": "^10.1.0",
+    "kill-port": "^2.0.1",
     "tsx": "^4.23.7",
     "typescript": "^7.0.2"
   },
@@ -43,6 +52,7 @@
     "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "openai": "^7.4.0",
+    "pg": "^8.23.0",
     "zod": "^4.4.3"
   }
 }

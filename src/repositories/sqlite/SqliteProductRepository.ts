@@ -14,7 +14,7 @@ export class SqliteProductRepository
             Database.Database
     ) {}
 
-    listAll(): Product[] {
+    async listAll(): Promise<Product[]> {
 
         const rows =
             this.db.prepare(`

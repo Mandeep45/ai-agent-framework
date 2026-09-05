@@ -3,10 +3,10 @@ import { Inventory } from "../types/Inventory";
 export interface InventoryRepository {
     findByProductId(
         productId: string
-    ): Inventory | null;
+    ): Promise<Inventory | null>;
 
     deductStock(
         productId: string,
         quantity: number
-    ): boolean;
+    ): Promise<boolean>;
 }

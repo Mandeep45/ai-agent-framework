@@ -19,8 +19,9 @@ eventsRouter.get(
         res: Response
     ) => {
 
-        const sessionId =
-            req.params.sessionId;
+        const sessionId = String(
+            req.params.sessionId
+        );
 
         res.setHeader(
             "Content-Type",

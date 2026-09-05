@@ -24,7 +24,7 @@ export class CustomerService {
         );
 
         const customer =
-            this.customerRepository
+            await this.customerRepository
                 .findById(customerId);
 
         if (!customer) {

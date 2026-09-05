@@ -17,6 +17,9 @@ import { createOrderTool } from "./orderTool";
 import {
     createDomainServices,
 } from "../db/createDomainServices";
+import {
+    createSqliteProvider,
+} from "../db/sqliteDatabaseProvider";
 
 import z from "zod";
 
@@ -35,7 +38,10 @@ const {
     customerService,
     inventoryService,
     orderService,
-} = createDomainServices(logger);
+} = createDomainServices(
+    logger,
+    createSqliteProvider()
+);
 
 const customerTool =
     createCustomerTool(

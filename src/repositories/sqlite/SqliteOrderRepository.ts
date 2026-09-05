@@ -15,9 +15,9 @@ export class SqliteOrderRepository
             Database.Database
     ) {}
 
-    create(
+    async create(
         input: CreateOrderInput
-    ): Order {
+    ): Promise<Order> {
 
         const orderId =
             `ORD-${Date.now()}`;
@@ -50,9 +50,9 @@ export class SqliteOrderRepository
         };
     }
 
-    findByCustomerId(
+    async findByCustomerId(
         customerId: string
-    ): Order[] {
+    ): Promise<Order[]> {
 
         const rows =
             this.db.prepare(`
