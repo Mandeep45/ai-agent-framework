@@ -4,4 +4,5 @@ export interface Order {
     productId: string;
     quantity: number;
     status: "confirmed";
+    createdAt?: string;
 }

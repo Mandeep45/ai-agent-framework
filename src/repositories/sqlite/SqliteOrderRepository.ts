@@ -49,4 +49,43 @@ export class SqliteOrderRepository
             status: "confirmed",
         };
     }
+
+    findByCustomerId(
+        customerId: string
+    ): Order[] {
+
+        const rows =
+            this.db.prepare(`
+                SELECT
+                    id,
+                    customer_id,
+                    product_id,
+                    quantity,
+                    status,
+                    created_at
+                FROM orders
+                WHERE customer_id = ?
+                ORDER BY created_at DESC
+            `).all(customerId) as Array<{
+                id: string;
+                customer_id: string;
+                product_id: string;
+                quantity: number;
+                status: "confirmed";
+                created_at: string;
+            }>;
+
+        return rows.map(row => ({
+            id: row.id,
+            customerId:
+                row.customer_id,
+            productId:
+                row.product_id,
+            quantity:
+                row.quantity,
+            status: row.status,
+            createdAt:
+                row.created_at,
+        }));
+    }
 }

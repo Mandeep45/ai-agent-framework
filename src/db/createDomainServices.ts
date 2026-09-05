@@ -9,6 +9,9 @@ import {
     OrderService,
 } from "../services/OrderService";
 import {
+    ProductService,
+} from "../services/ProductService";
+import {
     getDatabase,
 } from "./database";
 import {
@@ -20,12 +23,16 @@ import {
 import {
     SqliteOrderRepository,
 } from "../repositories/sqlite/SqliteOrderRepository";
+import {
+    SqliteProductRepository,
+} from "../repositories/sqlite/SqliteProductRepository";
 
 
 export interface DomainServices {
     customerService: CustomerService;
     inventoryService: InventoryService;
     orderService: OrderService;
+    productService: ProductService;
 }
 
 export function createDomainServices(
@@ -49,6 +56,11 @@ export function createDomainServices(
             db
         );
 
+    const productRepository =
+        new SqliteProductRepository(
+            db
+        );
+
     return {
         customerService:
             new CustomerService(
@@ -69,6 +81,12 @@ export function createDomainServices(
                 inventoryRepository,
                 orderRepository,
                 db
+            ),
+
+        productService:
+            new ProductService(
+                logger,
+                productRepository
             ),
     };
 }

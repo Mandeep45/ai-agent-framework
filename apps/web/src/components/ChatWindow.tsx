@@ -82,7 +82,11 @@ export function ChatWindow({
                         <p>
                             Then follow up with:
                             &quot;What was the
-                            order ID?&quot;
+                            order ID?&quot; or
+                            &quot;Show order history
+                            for customer ABC&quot; or
+                            &quot;What products are
+                            available?&quot;
                         </p>
                     </div>
                 )}

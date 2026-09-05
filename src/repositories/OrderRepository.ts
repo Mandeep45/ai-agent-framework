@@ -10,4 +10,8 @@ export interface OrderRepository {
     create(
         input: CreateOrderInput
     ): Order;
+
+    findByCustomerId(
+        customerId: string
+    ): Order[];
 }

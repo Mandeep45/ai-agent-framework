@@ -118,4 +118,40 @@ export class OrderService {
 
         return order;
     }
+
+    async getOrderHistory(
+        customerId: string
+    ): Promise<Order[]> {
+
+        this.logger.info(
+            "[OrderService] Fetching order history",
+            { customerId }
+        );
+
+        const customer =
+            this.customerRepository
+                .findById(customerId);
+
+        if (!customer) {
+            throw new CustomerNotFoundError(
+                customerId
+            );
+        }
+
+        const orders =
+            this.orderRepository
+                .findByCustomerId(
+                    customerId
+                );
+
+        this.logger.info(
+            "[OrderService] Order history fetched",
+            {
+                customerId,
+                count: orders.length,
+            }
+        );
+
+        return orders;
+    }
 }

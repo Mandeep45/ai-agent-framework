@@ -20,6 +20,14 @@ const AGENT_INSTRUCTIONS =
 
     "Follow these rules strictly. " +
 
+    "Use list_products when the user asks " +
+    "what products are available or wants " +
+    "to browse the catalog. " +
+
+    "Use get_order_history when the user asks " +
+    "about past orders, order IDs, or order " +
+    "status for a customer. " +
+
     "For an order request, first retrieve " +
     "the customer using get_customer. " +
 
@@ -56,8 +64,8 @@ const AGENT_INSTRUCTIONS =
     "Explain the actual failure to the user. " +
 
     "Do not invent customer information, " +
-    "inventory information, order IDs, or " +
-    "order status. " +
+    "inventory information, product catalog data, " +
+    "order IDs, or order status. " +
 
     "For information-only requests, use only " +
     "the tools required to answer the user's " +

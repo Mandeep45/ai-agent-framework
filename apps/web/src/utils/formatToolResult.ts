@@ -139,6 +139,88 @@ function formatOrder(
     );
 }
 
+function formatOrderHistory(
+    payload: unknown
+): string {
+
+    if (!Array.isArray(payload)) {
+        return "No orders found.";
+    }
+
+    if (payload.length === 0) {
+        return "No orders found for this customer.";
+    }
+
+    return payload
+        .map(item => {
+            const order =
+                item as Record<
+                    string,
+                    unknown
+                >;
+
+            const line = formatOrder(order);
+
+            const createdAt =
+                order.createdAt;
+
+            if (
+                typeof createdAt ===
+                "string"
+            ) {
+                return `${line} (${createdAt})`;
+            }
+
+            return line;
+        })
+        .join("\n");
+}
+
+function formatProductList(
+    payload: unknown
+): string {
+
+    if (!Array.isArray(payload)) {
+        return "No products available.";
+    }
+
+    if (payload.length === 0) {
+        return "No products available.";
+    }
+
+    return payload
+        .map(item => {
+            const product =
+                item as Record<
+                    string,
+                    unknown
+                >;
+
+            const name =
+                String(
+                    product.name ??
+                        product.id ??
+                        "Product"
+                );
+
+            const id =
+                String(product.id ?? "");
+
+            const quantity =
+                Number(
+                    product.quantity ?? 0
+                );
+
+            const stock =
+                quantity > 0
+                    ? `${quantity} in stock`
+                    : "out of stock";
+
+            return `${name} (${id}) — ${stock}`;
+        })
+        .join("\n");
+}
+
 function formatError(
     message: string
 ): string {
@@ -173,6 +255,24 @@ export function formatToolResult(
         }
 
         return payload;
+    }
+
+    if (Array.isArray(payload)) {
+
+        if (toolName === "list_products") {
+            return formatProductList(
+                payload
+            );
+        }
+
+        if (
+            toolName ===
+            "get_order_history"
+        ) {
+            return formatOrderHistory(
+                payload
+            );
+        }
     }
 
     if (

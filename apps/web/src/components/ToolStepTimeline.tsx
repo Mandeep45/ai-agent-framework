@@ -14,6 +14,10 @@ const TOOL_LABELS: Record<
         "Looking up customer",
     get_inventory:
         "Checking inventory",
+    list_products:
+        "Listing products",
+    get_order_history:
+        "Fetching order history",
     place_order:
         "Placing order",
 };

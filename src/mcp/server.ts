@@ -18,6 +18,7 @@ const {
     customerService,
     inventoryService,
     orderService,
+    productService,
 } = createDomainServices(logger);
 
 server.registerTool(
@@ -72,6 +73,64 @@ server.registerTool(
                 {
                     type: "text",
                     text: JSON.stringify(inventory),
+                },
+            ],
+        };
+    }
+);
+
+server.registerTool(
+    "list_products",
+    {
+        description:
+            "List all products with current stock levels",
+
+        inputSchema: {},
+    },
+
+    async () => {
+
+        const products =
+            await productService.listProducts();
+
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: JSON.stringify(
+                        products
+                    ),
+                },
+            ],
+        };
+    }
+);
+
+server.registerTool(
+    "get_order_history",
+    {
+        description:
+            "Get order history for a customer by customer ID",
+
+        inputSchema: {
+            customerId: z.string(),
+        },
+    },
+
+    async ({ customerId }) => {
+
+        const orders =
+            await orderService.getOrderHistory(
+                customerId
+            );
+
+        return {
+            content: [
+                {
+                    type: "text",
+                    text: JSON.stringify(
+                        orders
+                    ),
                 },
             ],
         };
