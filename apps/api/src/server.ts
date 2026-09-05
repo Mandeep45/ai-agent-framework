@@ -1,8 +1,16 @@
 import "./env";
 import "dotenv/config";
 
+import type {
+    Server,
+} from "node:http";
+
 import cors from "cors";
 import express from "express";
+
+import {
+    closeDatabase,
+} from "../../../src/db/database";
 
 import {
     agentAppService,
@@ -25,6 +33,67 @@ const PORT =
     Number(
         process.env.API_PORT ?? 3001
     );
+
+let httpServer: Server | null = null;
+let isShuttingDown = false;
+
+
+async function shutdown(
+    signal: string
+): Promise<void> {
+
+    if (isShuttingDown) {
+        return;
+    }
+
+    isShuttingDown = true;
+
+    console.log(
+        `\nShutting down API server (${signal})...`
+    );
+
+    if (httpServer) {
+
+        await new Promise<void>(
+            (resolve, reject) => {
+
+                httpServer!.close(
+                    error => {
+
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+
+                        resolve();
+                    }
+                );
+            }
+        ).catch(
+            error => {
+                console.error(
+                    "Failed to close HTTP server:",
+                    error
+                );
+            }
+        );
+
+        httpServer = null;
+    }
+
+    try {
+        await agentAppService.shutdown();
+    } catch (error) {
+        console.error(
+            "Failed to shut down agent services:",
+            error
+        );
+    }
+
+    closeDatabase();
+
+    process.exit(0);
+}
 
 
 async function main() {
@@ -69,7 +138,7 @@ async function main() {
 
     await agentAppService.initialize();
 
-    app.listen(
+    httpServer = app.listen(
         PORT,
         () => {
             console.log(
@@ -78,19 +147,46 @@ async function main() {
         }
     );
 
-    const shutdown = async () => {
-        await agentAppService.shutdown();
-        process.exit(0);
-    };
+    httpServer.on(
+        "error",
+        error => {
+
+            if (
+                "code" in error &&
+                error.code ===
+                    "EADDRINUSE"
+            ) {
+                console.error(
+                    `\nPort ${PORT} is already in use.`
+                );
+
+                console.error(
+                    "Stop the other API process, or set API_PORT in .env."
+                );
+
+                console.error(
+                    "Windows: netstat -ano | findstr :" +
+                        PORT +
+                        "  then  taskkill /PID <pid> /F"
+                );
+            }
+
+            throw error;
+        }
+    );
 
     process.on(
         "SIGINT",
-        shutdown
+        () => {
+            void shutdown("SIGINT");
+        }
     );
 
     process.on(
         "SIGTERM",
-        shutdown
+        () => {
+            void shutdown("SIGTERM");
+        }
     );
 }
 

@@ -110,4 +110,12 @@ export const config = {
             ),
     },
 
+    database: {
+        path:
+            getEnv(
+                "DATABASE_PATH",
+                "data/app.db"
+            ),
+    },
+
 } as const;

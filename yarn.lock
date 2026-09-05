@@ -398,6 +398,13 @@
   dependencies:
     "@babel/types" "^7.28.2"
 
+"@types/better-sqlite3@^9.6.0":
+  version "9.6.0"
+  resolved "https://registry.npmjs.org/@types/better-sqlite3/-/better-sqlite3-9.6.0.tgz"
+  integrity sha512-ZEEwBSgMu7GYJOynoagg5X9JbxfL6dTJDsgViJIqh67jV44kyOr9RXfmFjLK5rzC4MWssP06t9hu/JwGDnUbCg==
+  dependencies:
+    "@types/node" "*"
+
 "@types/body-parser@*":
   version "1.19.6"
   resolved "https://registry.npmjs.org/@types/body-parser/-/body-parser-1.19.6.tgz"
@@ -556,6 +563,13 @@ baseline-browser-mapping@^2.11.20:
   version "2.11.21"
   resolved "https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.11.21.tgz"
   integrity sha512-uh8vpY/1/YyFkunIDFH/12p7/7VdPKA1hejMVEbdkEaWnUz0Hesvx5EbiU6XxjyHZIOju+ZMbQJkRh+es3/spQ==
+
+better-sqlite3@^13.0.3:
+  version "13.0.3"
+  resolved "https://registry.npmjs.org/better-sqlite3/-/better-sqlite3-13.0.3.tgz"
+  integrity sha512-RbOBxmLBG8uvFUc15X9+9SFemKcQ0WBuISBVkpuiaUB2qblC8UWlHEjdWVoZ8AdhSwmoEgsiXKfopX0CQxaACQ==
+  dependencies:
+    node-addon-api "^8.0.0"
 
 body-parser@~1.20.5:
   version "1.20.6"
@@ -1149,6 +1163,11 @@ negotiator@0.6.3:
   version "0.6.3"
   resolved "https://registry.npmjs.org/negotiator/-/negotiator-0.6.3.tgz"
   integrity sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==
+
+node-addon-api@^8.0.0:
+  version "8.9.2"
+  resolved "https://registry.npmjs.org/node-addon-api/-/node-addon-api-8.9.2.tgz"
+  integrity sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==
 
 node-releases@^2.0.54:
   version "2.0.54"

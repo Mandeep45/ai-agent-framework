@@ -13,7 +13,7 @@
     "dev": "tsx src/index.ts",
     "dev:api": "tsx watch apps/api/src/server.ts",
     "dev:web": "vite --config apps/web/vite.config.ts",
-    "dev:app": "concurrently -n api,web -c blue,green \"tsx watch apps/api/src/server.ts\" \"vite --config apps/web/vite.config.ts\"",
+    "dev:app": "concurrently -k -n api,web -c blue,green \"tsx watch apps/api/src/server.ts\" \"vite --config apps/web/vite.config.ts\"",
     "build": "tsc",
     "build:app": "tsc -p apps/api/tsconfig.json && vite build --config apps/web/vite.config.ts",
     "start": "node dist/index.js",
@@ -27,6 +27,7 @@
     "agents-sdk:mcp": "tsx src/agents-sdk/mcpAgentIndex.ts"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.2.0",
     "concurrently": "^9.1.2",
     "tsx": "^4.23.7",
@@ -39,6 +40,7 @@
     "@modelcontextprotocol/client": "^2.0.0",
     "@modelcontextprotocol/server": "^2.0.0",
     "@openai/agents": "^0.17.0",
+    "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "openai": "^7.4.0",
     "zod": "^4.4.3"

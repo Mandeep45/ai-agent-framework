@@ -1,16 +1,36 @@
-import { Logger } from "../logger/Logger";
+import type Database from "better-sqlite3";
 
-export interface Order {
-    id: string;
-    customerId: string;
-    productId: string;
-    quantity: number;
-    status: "confirmed";
-}
+import { Logger } from "../logger/Logger";
+import { Order } from "../types/Order";
+import { CustomerNotFoundError } from "../errors/CustomerNotFoundError";
+import { ProductNotFoundError } from "../errors/ProductNotFoundError";
+import { InsufficientStockError } from "../errors/InsufficientStockError";
+import {
+    CustomerRepository,
+} from "../repositories/CustomerRepository";
+import {
+    InventoryRepository,
+} from "../repositories/InventoryRepository";
+import {
+    OrderRepository,
+} from "../repositories/OrderRepository";
 
 export class OrderService {
+
     constructor(
-        private readonly logger: Logger
+        private readonly logger: Logger,
+
+        private readonly customerRepository:
+            CustomerRepository,
+
+        private readonly inventoryRepository:
+            InventoryRepository,
+
+        private readonly orderRepository:
+            OrderRepository,
+
+        private readonly db:
+            Database.Database
     ) {}
 
     async placeOrder(
@@ -28,18 +48,68 @@ export class OrderService {
             }
         );
 
-        // Simulate order processing
-        await new Promise(
-            resolve => setTimeout(resolve, 1000)
-        );
+        const customer =
+            this.customerRepository
+                .findById(customerId);
 
-        const order: Order = {
-            id: `ORD-${Date.now()}`,
-            customerId,
-            productId,
-            quantity,
-            status: "confirmed",
-        };
+        if (!customer) {
+            throw new CustomerNotFoundError(
+                customerId
+            );
+        }
+
+        const inventory =
+            this.inventoryRepository
+                .findByProductId(
+                    productId
+                );
+
+        if (!inventory) {
+            throw new ProductNotFoundError(
+                productId
+            );
+        }
+
+        if (
+            inventory.quantity <
+            quantity
+        ) {
+            throw new InsufficientStockError(
+                productId,
+                quantity,
+                inventory.quantity
+            );
+        }
+
+        const order =
+            this.db.transaction(
+                () => {
+
+                    const deducted =
+                        this.inventoryRepository
+                            .deductStock(
+                                productId,
+                                quantity
+                            );
+
+                    if (
+                        !deducted
+                    ) {
+                        throw new InsufficientStockError(
+                            productId,
+                            quantity,
+                            inventory.quantity
+                        );
+                    }
+
+                    return this.orderRepository
+                        .create({
+                            customerId,
+                            productId,
+                            quantity,
+                        });
+                }
+            )();
 
         this.logger.info(
             "[OrderService] Order confirmed",

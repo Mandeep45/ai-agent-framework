@@ -1,29 +1,17 @@
 import { Logger } from "../logger/Logger";
 import { ProductNotFoundError } from "../errors/ProductNotFoundError";
-
-interface Inventory {
-    productId: string;
-    available: boolean;
-    quantity: number;
-}
+import { Inventory } from "../types/Inventory";
+import {
+    InventoryRepository,
+} from "../repositories/InventoryRepository";
 
 export class InventoryService {
 
-    private readonly inventory: Inventory[] = [
-        {
-            productId: "XYZ",
-            available: true,
-            quantity: 25,
-        },
-        {
-            productId: "ABC",
-            available: false,
-            quantity: 0,
-        },
-    ];
-
     constructor(
-        private readonly logger: Logger
+        private readonly logger: Logger,
+
+        private readonly inventoryRepository:
+            InventoryRepository
     ) {}
 
     async checkInventory(
@@ -36,10 +24,10 @@ export class InventoryService {
         );
 
         const inventory =
-            this.inventory.find(
-                item =>
-                    item.productId === productId
-            );
+            this.inventoryRepository
+                .findByProductId(
+                    productId
+                );
 
         if (!inventory) {
 
@@ -57,8 +45,10 @@ export class InventoryService {
             "[InventoryService] Inventory found",
             {
                 productId,
-                quantity: inventory.quantity,
-                available: inventory.available,
+                quantity:
+                    inventory.quantity,
+                available:
+                    inventory.available,
             }
         );
 

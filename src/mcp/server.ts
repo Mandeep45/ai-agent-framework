@@ -2,10 +2,10 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { StdioServerTransport } from "@modelcontextprotocol/server/stdio";
 import { z } from "zod";
 
-import { CustomerService } from "../services/CustomerService";
 import { ConsoleLogger } from "../logger/ConsoleLogger";
-import { InventoryService } from "../services/InventoryService";
-import { OrderService } from "../services/OrderService";
+import {
+    createDomainServices,
+} from "../db/createDomainServices";
 
 const server = new McpServer({
     name: "ai-agent-mcp-server",
@@ -14,13 +14,11 @@ const server = new McpServer({
 
 const logger = new ConsoleLogger();
 
-const customerService =
-    new CustomerService(logger);
-
-const inventoryService =
-    new InventoryService(logger);
-
-const orderService = new OrderService(logger);
+const {
+    customerService,
+    inventoryService,
+    orderService,
+} = createDomainServices(logger);
 
 server.registerTool(
     "get_customer",

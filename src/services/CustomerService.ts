@@ -1,24 +1,17 @@
 import { Logger } from "../logger/Logger";
 import { Customer } from "../types/Customer";
 import { CustomerNotFoundError } from "../errors/CustomerNotFoundError";
+import {
+    CustomerRepository,
+} from "../repositories/CustomerRepository";
 
 export class CustomerService {
 
-    private readonly customers: Customer[] = [
-        {
-            id: "ABC",
-            name: "John Doe",
-            email: "john@example.com",
-        },
-        {
-            id: "DEF",
-            name: "Jane Doe",
-            email: "jane@example.com",
-        },
-    ];
-
     constructor(
-        private readonly logger: Logger
+        private readonly logger: Logger,
+
+        private readonly customerRepository:
+            CustomerRepository
     ) {}
 
     async findCustomer(
@@ -31,10 +24,8 @@ export class CustomerService {
         );
 
         const customer =
-            this.customers.find(
-                customer =>
-                    customer.id === customerId
-            );
+            this.customerRepository
+                .findById(customerId);
 
         if (!customer) {
 
@@ -50,9 +41,7 @@ export class CustomerService {
 
         this.logger.info(
             "[CustomerService] Customer found",
-            {
-                customerId,
-            }
+            { customerId }
         );
 
         return customer;
