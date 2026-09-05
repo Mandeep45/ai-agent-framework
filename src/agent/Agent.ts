@@ -1,95 +1,254 @@
 import { AgentResponse } from "../types/AgentResponse";
 import { LLMResponse } from "../types/LLMResponse";
 import { ToolCall } from "../types/ToolCall";
+import {
+    ToolExecutionResult,
+} from "../types/ToolExecutionResult";
 import { LLMProvider } from "../llm/LLMProvider";
 import { ToolRegistry } from "../registry/ToolRegistry";
 import { MessageHistory } from "./MessageHistory";
-import { AgentIterationError } from "../errors/AgentIterationError";
+import { ToolValidator } from "../validation/ToolValidator";
 import { ToolExecutionError } from "../errors/ToolExecutionError";
 
 export class Agent {
+    private readonly maxIterations = 10;
+    private readonly toolTimeoutMs = 5000;
+
     constructor(
         private readonly registry: ToolRegistry,
         private readonly history: MessageHistory,
         private readonly llm: LLMProvider,
-        private readonly maxIterations = 10
+        private readonly validator = new ToolValidator()
     ) {}
 
-    async chat(message: string): Promise<AgentResponse> {
+    async chat(
+        message: string
+    ): Promise<AgentResponse> {
+
         this.addUserMessage(message);
 
         let iteration = 0;
 
-        while (iteration < this.maxIterations) {
+        while (
+            iteration < this.maxIterations
+        ) {
             iteration++;
 
-            const response = await this.generateResponse();
+            const response =
+                await this.generateResponse();
 
             if (response.isFinal) {
-                this.addAssistantMessage(response.message ?? "");
+                this.addAssistantMessage(
+                    response.message ?? ""
+                );
 
-                return this.buildResponse(response);
+                return this.buildResponse(
+                    response
+                );
             }
 
             for (const toolCall of response.toolCalls) {
-                const result = await this.executeTool(toolCall);
-
-                this.addToolResult(
-                    toolCall.toolName,
-                    result
-                );
+                this.addAssistantToolCall(toolCall);
             }
+            
+            const results = await Promise.all(
+                response.toolCalls.map(
+                    toolCall =>
+                        this.executeToolSafely(toolCall)
+                )
+            );
+            
+            response.toolCalls.forEach(
+                (toolCall, index) => {
+                    this.addToolResult(
+                        toolCall,
+                        results[index]
+                    );
+                }
+            );
         }
 
-        throw new AgentIterationError(this.maxIterations);
+        throw new Error(
+            `Agent exceeded the maximum iteration limit (${this.maxIterations}).`
+        );
     }
 
-    private addUserMessage(message: string): void {
+    private addUserMessage(
+        message: string
+    ): void {
         this.history.add({
             role: "user",
             content: message,
         });
     }
 
-    private addAssistantMessage(message: string): void {
+    private addAssistantMessage(
+        message: string
+    ): void {
         this.history.add({
             role: "assistant",
             content: message,
         });
     }
 
-    private async generateResponse(): Promise<LLMResponse> {
+    private addAssistantToolCall(
+        toolCall: ToolCall
+    ): void {
+        this.history.add({
+            role: "assistant_tool_call",
+            toolCallId: toolCall.id,
+            toolName: toolCall.toolName,
+            arguments: toolCall.arguments,
+        });
+    }
+
+    private async generateResponse():
+        Promise<LLMResponse> {
+
         return this.llm.generate(
             this.history.getMessages(),
             this.registry.getDefinitions()
         );
     }
 
-    private async executeTool(
+    private async executeToolSafely(
         toolCall: ToolCall
-    ): Promise<unknown> {
-    
-        const tool = this.registry.get(
-            toolCall.toolName
-        );
-    
+    ): Promise<ToolExecutionResult> {
+
+        const tool =
+            this.registry.get(
+                toolCall.toolName
+            );
+
         try {
-            return await tool.execute(toolCall.arguments);
+            this.validator.validate(
+                tool.definition,
+                toolCall.arguments
+            );
+
+            const data =
+                await this.withTimeout(
+                    tool.execute(
+                        toolCall.arguments
+                    ),
+                    this.toolTimeoutMs
+                );
+
+            return {
+                success: true,
+                toolCallId: toolCall.id,
+                toolName: toolCall.toolName,
+                data,
+            };
+
         } catch (error) {
-            throw new ToolExecutionError(
-                toolCall.toolName,
-                error
+
+            if (
+                error instanceof Error &&
+                error.name ===
+                    "ToolValidationError"
+            ) {
+                return {
+                    success: false,
+                    toolCallId: toolCall.id,
+                    toolName: toolCall.toolName,
+                    error: {
+                        type: "validation_error",
+                        message: error.message,
+                    },
+                };
+            }
+
+            if (
+                error instanceof Error &&
+                error.name ===
+                    "ToolTimeoutError"
+            ) {
+                return {
+                    success: false,
+                    toolCallId: toolCall.id,
+                    toolName: toolCall.toolName,
+                    error: {
+                        type: "timeout_error",
+                        message: error.message,
+                    },
+                };
+            }
+
+            const executionError =
+                new ToolExecutionError(
+                    toolCall.toolName,
+                    error instanceof Error
+                        ? error.message
+                        : "Unknown error",
+                    error
+                );
+
+            return {
+                success: false,
+                toolCallId: toolCall.id,
+                toolName: toolCall.toolName,
+                error: {
+                    type: "execution_error",
+                    message:
+                        executionError.message,
+                },
+            };
+        }
+    }
+
+    private async withTimeout<T>(
+        promise: Promise<T>,
+        timeoutMs: number
+    ): Promise<T> {
+
+        let timeoutId:
+            ReturnType<typeof setTimeout>;
+
+        const timeoutPromise =
+            new Promise<never>(
+                (_, reject) => {
+
+                    timeoutId =
+                        setTimeout(
+                            () => {
+
+                                const error =
+                                    new Error(
+                                        `Tool execution exceeded ${timeoutMs}ms.`
+                                    );
+
+                                error.name =
+                                    "ToolTimeoutError";
+
+                                reject(error);
+                            },
+                            timeoutMs
+                        );
+                }
+            );
+
+        try {
+            return await Promise.race([
+                promise,
+                timeoutPromise,
+            ]);
+        } finally {
+            clearTimeout(
+                timeoutId!
             );
         }
     }
 
     private addToolResult(
-        toolName: string,
-        result: unknown
+        toolCall: ToolCall,
+        result: ToolExecutionResult
     ): void {
+
         this.history.add({
             role: "tool",
-            toolName,
+            toolCallId: toolCall.id,
+            toolName: toolCall.toolName,
             content: result,
         });
     }
@@ -97,8 +256,10 @@ export class Agent {
     private buildResponse(
         response: LLMResponse
     ): AgentResponse {
+
         return {
-            message: response.message ?? "",
+            message:
+                response.message ?? "",
         };
     }
 }

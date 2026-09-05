@@ -1,12 +1,9 @@
-import { CustomerInput } from "../types/CustomerInput";
-import { Customer } from "../types/Customer";
 import { Tool } from "../types/tools";
+import { ToolDefinition } from "../types/ToolDefinition";
 import { CustomerService } from "../services/CustomerService";
 
-export class CustomerTool
-    implements Tool<CustomerInput, Customer> {
-
-    readonly definition = {
+export class CustomerTool implements Tool {
+    readonly definition: ToolDefinition = {
         name: "CustomerTool",
         description: "Find customer by customer ID.",
         inputSchema: {
@@ -14,9 +11,11 @@ export class CustomerTool
             properties: {
                 customerId: {
                     type: "string",
+                    description: "The customer ID to search for.",
                 },
             },
             required: ["customerId"],
+            additionalProperties: false,
         },
     };
 
@@ -25,12 +24,14 @@ export class CustomerTool
     ) {}
 
     async execute(
-        input: CustomerInput
-    ): Promise<Customer> {
+        input: unknown
+    ): Promise<unknown> {
+        const { customerId } = input as {
+            customerId: string;
+        };
 
         return this.customerService.findCustomer(
-            input.customerId
+            customerId
         );
-
     }
 }
