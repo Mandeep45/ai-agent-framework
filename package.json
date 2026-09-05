@@ -6,17 +6,30 @@
   "author": "",
   "type": "commonjs",
   "main": "dist/index.js",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
     "dev": "tsx src/index.ts",
+    "dev:api": "tsx watch apps/api/src/server.ts",
+    "dev:web": "vite --config apps/web/vite.config.ts",
+    "dev:app": "concurrently -k -n api,web -c blue,green \"tsx watch apps/api/src/server.ts\" \"vite --config apps/web/vite.config.ts\"",
     "build": "tsc",
+    "build:app": "tsc -p apps/api/tsconfig.json && vite build --config apps/web/vite.config.ts",
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "langgraph": "tsx src/langgraph/index.ts",
-    "langgraph:approval": "tsx src/langgraph/approvalIndex.ts"
+    "langgraph:approval": "tsx src/langgraph/approvalIndex.ts",
+    "mcp": "tsx src/mcp/client.ts",
+    "mcp:agent": "tsx src/mcp/agentIndex.ts",
+    "agents-sdk": "tsx src/agents-sdk/index.ts",
+    "agents-sdk:mcp": "tsx src/agents-sdk/mcpAgentIndex.ts"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.2.0",
+    "concurrently": "^9.1.2",
     "tsx": "^4.23.7",
     "typescript": "^7.0.2"
   },
@@ -24,6 +37,10 @@
     "@langchain/core": "^1.2.5",
     "@langchain/langgraph": "^1.4.9",
     "@langchain/openai": "^1.5.6",
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "@openai/agents": "^0.17.0",
+    "better-sqlite3": "^13.0.3",
     "dotenv": "^17.4.2",
     "openai": "^7.4.0",
     "zod": "^4.4.3"

@@ -1,22 +1,49 @@
 import { Logger } from "../logger/Logger";
 import { Customer } from "../types/Customer";
+import { CustomerNotFoundError } from "../errors/CustomerNotFoundError";
+import {
+    CustomerRepository,
+} from "../repositories/CustomerRepository";
 
 export class CustomerService {
 
     constructor(
-        private readonly logger: Logger
+        private readonly logger: Logger,
+
+        private readonly customerRepository:
+            CustomerRepository
     ) {}
 
-    async findCustomer(customerId: string): Promise<Customer> {
+    async findCustomer(
+        customerId: string
+    ): Promise<Customer> {
 
         this.logger.info(
-            `[CustomerService] Searching ${customerId}`
+            "[CustomerService] Searching customer",
+            { customerId }
         );
 
-        return {
-            id: customerId,
-            name: "John Doe",
-            email: "john@example.com",
-        };
+        const customer =
+            this.customerRepository
+                .findById(customerId);
+
+        if (!customer) {
+
+            this.logger.warn(
+                "[CustomerService] Customer not found",
+                { customerId }
+            );
+
+            throw new CustomerNotFoundError(
+                customerId
+            );
+        }
+
+        this.logger.info(
+            "[CustomerService] Customer found",
+            { customerId }
+        );
+
+        return customer;
     }
 }

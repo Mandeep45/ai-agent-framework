@@ -10,13 +10,13 @@ import {
 
 import { llm } from "./llm";
 import { createCustomerTool } from "./customerTool";
-import { CustomerService } from "../services/CustomerService";
 import { ConsoleLogger } from "../logger/ConsoleLogger";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { InventoryService } from "../services/InventoryService";
 import { createInventoryTool } from "./inventoryTool";
-import { OrderService } from "../services/OrderService";
 import { createOrderTool } from "./orderTool";
+import {
+    createDomainServices,
+} from "../db/createDomainServices";
 
 import z from "zod";
 
@@ -31,14 +31,11 @@ const logger = new ConsoleLogger();
 const checkpointer =
     new MemorySaver();
 
-const customerService =
-    new CustomerService(logger);
-
-const inventoryService =
-    new InventoryService(logger);
-
-const orderService =
-    new OrderService(logger);
+const {
+    customerService,
+    inventoryService,
+    orderService,
+} = createDomainServices(logger);
 
 const customerTool =
     createCustomerTool(
