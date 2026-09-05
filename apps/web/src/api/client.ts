@@ -1,6 +1,7 @@
 import type {
     PendingApproval,
     SessionEvent,
+    ToolStep,
 } from "../types";
 
 const API_BASE = "/api";
@@ -137,5 +138,86 @@ export function parseApprovalEvent(
         approvalId,
         toolName,
         argumentsJson,
+    };
+}
+
+export function parseToolCallEvent(
+    event: SessionEvent
+): ToolStep | null {
+
+    if (
+        event.type !== "tool_call"
+    ) {
+        return null;
+    }
+
+    const stepId =
+        event.data?.stepId;
+
+    const toolName =
+        event.data?.toolName;
+
+    const argumentsJson =
+        event.data?.argumentsJson;
+
+    if (
+        typeof stepId !== "string" ||
+        typeof toolName !== "string"
+    ) {
+        return null;
+    }
+
+    return {
+        id: stepId,
+        toolName,
+        status: "running",
+        argumentsJson:
+            typeof argumentsJson === "string"
+                ? argumentsJson
+                : undefined,
+    };
+}
+
+export function parseToolResultEvent(
+    event: SessionEvent
+): {
+    stepId: string;
+    toolName: string;
+    result: string;
+    success: boolean;
+} | null {
+
+    if (
+        event.type !== "tool_result"
+    ) {
+        return null;
+    }
+
+    const stepId =
+        event.data?.stepId;
+
+    const toolName =
+        event.data?.toolName;
+
+    const result =
+        event.data?.result;
+
+    const success =
+        event.data?.success;
+
+    if (
+        typeof stepId !== "string" ||
+        typeof toolName !== "string" ||
+        typeof result !== "string"
+    ) {
+        return null;
+    }
+
+    return {
+        stepId,
+        toolName,
+        result,
+        success:
+            success === true,
     };
 }

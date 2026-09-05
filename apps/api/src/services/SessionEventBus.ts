@@ -1,5 +1,7 @@
 export type SessionEventType =
     | "agent_started"
+    | "tool_call"
+    | "tool_result"
     | "approval_required"
     | "approval_resolved"
     | "agent_completed"

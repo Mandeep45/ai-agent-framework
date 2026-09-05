@@ -1,11 +1,15 @@
 import {
     Agent,
-    run,
+    Runner,
     MaxTurnsExceededError,
     ModelTimeoutError,
     ModelBehaviorError,
     ToolCallError,
     ToolTimeoutError,
+} from "@openai/agents";
+
+import type {
+    Session,
 } from "@openai/agents";
 
 import {
@@ -15,6 +19,10 @@ import {
 import {
     AgentLogger,
 } from "../logger/AgentLogger";
+
+import {
+    AgentRunCallbacks,
+} from "./AgentRunCallbacks";
 
 import {
     config,
@@ -31,18 +39,79 @@ function createRunSignal(): AbortSignal {
 
 export class AgentRunner {
 
+    private readonly sdkRunner =
+        new Runner();
+
     constructor(
         private readonly approvalHandler:
             ApprovalHandler,
 
         private readonly logger:
-            AgentLogger
-    ) {}
+            AgentLogger,
+
+        private readonly callbacks?:
+            AgentRunCallbacks
+    ) {
+
+        if (callbacks) {
+
+            this.sdkRunner.on(
+                "agent_tool_start",
+                (
+                    _context,
+                    _agent,
+                    tool,
+                    details
+                ) => {
+
+                    const toolCall =
+                        details.toolCall as {
+                            arguments?: unknown;
+                        };
+
+                    const argumentsJson =
+                        JSON.stringify(
+                            toolCall.arguments ?? {}
+                        );
+
+                    callbacks.onToolStart?.(
+                        tool.name,
+                        argumentsJson
+                    );
+                }
+            );
+
+            this.sdkRunner.on(
+                "agent_tool_end",
+                (
+                    _context,
+                    _agent,
+                    tool,
+                    result
+                ) => {
+
+                    const success =
+                        !result
+                            .toLowerCase()
+                            .includes(
+                                "error"
+                            );
+
+                    callbacks.onToolEnd?.(
+                        tool.name,
+                        result,
+                        success
+                    );
+                }
+            );
+        }
+    }
 
 
     async run(
         agent: Agent,
-        input: string
+        input: string,
+        session?: Session
     ) {
 
         const startTime =
@@ -57,7 +126,8 @@ export class AgentRunner {
             let result =
                 await this.execute(
                     agent,
-                    input
+                    input,
+                    session
                 );
 
             while (
@@ -148,7 +218,8 @@ export class AgentRunner {
                 result =
                     await this.execute(
                         agent,
-                        result.state
+                        result.state,
+                        session
                     );
             }
 
@@ -175,7 +246,8 @@ export class AgentRunner {
 
     private async execute(
         agent: Agent,
-        input: string | any
+        input: string | any,
+        session?: Session
     ) {
 
         const startTime =
@@ -183,7 +255,7 @@ export class AgentRunner {
 
         try {
 
-            return await run(
+            return await this.sdkRunner.run(
                 agent,
                 input,
                 {
@@ -192,6 +264,8 @@ export class AgentRunner {
 
                     signal:
                         createRunSignal(),
+
+                    session,
                 }
             );
 

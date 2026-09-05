@@ -24,11 +24,34 @@ import {
     sessionEventBus,
 } from "./SessionEventBus";
 
+import {
+    sessionStore,
+} from "./SessionStore";
+
 
 export interface ChatResult {
     sessionId: string;
     output: string;
 }
+
+
+function emitSessionEvent(
+    sessionId: string,
+    type: Parameters<
+        typeof sessionEventBus.emit
+    >[0]["type"],
+    data?: Record<string, unknown>
+): void {
+
+    sessionEventBus.emit({
+        type,
+        sessionId,
+        timestamp:
+            new Date().toISOString(),
+        data,
+    });
+}
+
 
 export class AgentAppService {
 
@@ -91,21 +114,18 @@ export class AgentAppService {
                     sessionId,
 
                     approval => {
-                        sessionEventBus.emit({
-                            type:
-                                "approval_required",
+                        emitSessionEvent(
                             sessionId,
-                            timestamp:
-                                new Date().toISOString(),
-                            data: {
+                            "approval_required",
+                            {
                                 approvalId:
                                     approval.id,
                                 toolName:
                                     approval.toolName,
                                 argumentsJson:
                                     approval.argumentsJson,
-                            },
-                        });
+                            }
+                        );
                     }
                 );
 
@@ -140,17 +160,14 @@ export class AgentAppService {
             );
 
         if (resolved) {
-            sessionEventBus.emit({
-                type:
-                    "approval_resolved",
+            emitSessionEvent(
                 sessionId,
-                timestamp:
-                    new Date().toISOString(),
-                data: {
+                "approval_resolved",
+                {
                     approvalId,
                     approved,
-                },
-            });
+                }
+            );
         }
 
         return resolved;
@@ -172,28 +189,95 @@ export class AgentAppService {
                 sessionId
             );
 
+        const memorySession =
+            sessionStore.getOrCreate(
+                sessionId
+            );
+
         const runner =
             new AgentRunner(
                 approvalHandler,
-                new AgentLogger()
+                new AgentLogger(),
+
+                (() => {
+
+                    let stepCounter = 0;
+
+                    const activeSteps =
+                        new Map<
+                            string,
+                            string
+                        >();
+
+                    return {
+                        onToolStart: (
+                            toolName: string,
+                            argumentsJson: string
+                        ) => {
+
+                            const stepId =
+                                `step-${++stepCounter}`;
+
+                            activeSteps.set(
+                                toolName,
+                                stepId
+                            );
+
+                            emitSessionEvent(
+                                sessionId,
+                                "tool_call",
+                                {
+                                    stepId,
+                                    toolName,
+                                    argumentsJson,
+                                }
+                            );
+                        },
+
+                        onToolEnd: (
+                            toolName: string,
+                            result: string,
+                            success: boolean
+                        ) => {
+
+                            const stepId =
+                                activeSteps.get(
+                                    toolName
+                                ) ??
+                                `step-${++stepCounter}`;
+
+                            activeSteps.delete(
+                                toolName
+                            );
+
+                            emitSessionEvent(
+                                sessionId,
+                                "tool_result",
+                                {
+                                    stepId,
+                                    toolName,
+                                    result,
+                                    success,
+                                }
+                            );
+                        },
+                    };
+                })()
             );
 
-        sessionEventBus.emit({
-            type: "agent_started",
+        emitSessionEvent(
             sessionId,
-            timestamp:
-                new Date().toISOString(),
-            data: {
-                message,
-            },
-        });
+            "agent_started",
+            { message }
+        );
 
         try {
 
             const result =
                 await runner.run(
                     this.agent,
-                    message
+                    message,
+                    memorySession
                 );
 
             const output =
@@ -201,16 +285,11 @@ export class AgentAppService {
                     result.finalOutput ?? ""
                 );
 
-            sessionEventBus.emit({
-                type:
-                    "agent_completed",
+            emitSessionEvent(
                 sessionId,
-                timestamp:
-                    new Date().toISOString(),
-                data: {
-                    output,
-                },
-            });
+                "agent_completed",
+                { output }
+            );
 
             return {
                 sessionId,
@@ -224,16 +303,14 @@ export class AgentAppService {
                     ? error.message
                     : String(error);
 
-            sessionEventBus.emit({
-                type: "agent_error",
+            emitSessionEvent(
                 sessionId,
-                timestamp:
-                    new Date().toISOString(),
-                data: {
+                "agent_error",
+                {
                     error:
                         errorMessage,
-                },
-            });
+                }
+            );
 
             throw error;
 

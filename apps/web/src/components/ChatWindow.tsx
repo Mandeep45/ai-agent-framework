@@ -1,11 +1,18 @@
 import type {
     ChatMessage,
+    ToolStep,
 } from "../types";
+
+import {
+    ToolStepTimeline,
+} from "./ToolStepTimeline";
 
 interface ChatWindowProps {
     messages: ChatMessage[];
+    toolSteps: ToolStep[];
     statusText: string;
     isLoading: boolean;
+    isAwaitingApproval: boolean;
     input: string;
     onInputChange: (
         value: string
@@ -15,12 +22,18 @@ interface ChatWindowProps {
 
 export function ChatWindow({
     messages,
+    toolSteps,
     statusText,
     isLoading,
+    isAwaitingApproval,
     input,
     onInputChange,
     onSubmit,
 }: ChatWindowProps) {
+
+    const inputDisabled =
+        isLoading ||
+        isAwaitingApproval;
 
     function handleKeyDown(
         event: React.KeyboardEvent
@@ -31,7 +44,10 @@ export function ChatWindow({
             !event.shiftKey
         ) {
             event.preventDefault();
-            onSubmit();
+
+            if (!inputDisabled) {
+                onSubmit();
+            }
         }
     }
 
@@ -63,6 +79,11 @@ export function ChatWindow({
                             and place an order
                             for 1 unit.
                         </p>
+                        <p>
+                            Then follow up with:
+                            &quot;What was the
+                            order ID?&quot;
+                        </p>
                     </div>
                 )}
 
@@ -79,6 +100,10 @@ export function ChatWindow({
                         </div>
                     </div>
                 ))}
+
+                <ToolStepTimeline
+                    steps={toolSteps}
+                />
             </main>
 
             <footer className="chat-input">
@@ -90,9 +115,13 @@ export function ChatWindow({
                         )
                     }
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask the order assistant..."
+                    placeholder={
+                        isAwaitingApproval
+                            ? "Waiting for approval..."
+                            : "Ask the order assistant..."
+                    }
                     rows={3}
-                    disabled={isLoading}
+                    disabled={inputDisabled}
                 />
 
                 <button
@@ -100,13 +129,15 @@ export function ChatWindow({
                     className="btn btn-send"
                     onClick={onSubmit}
                     disabled={
-                        isLoading ||
+                        inputDisabled ||
                         input.trim() === ""
                     }
                 >
                     {isLoading
                         ? "Running..."
-                        : "Send"}
+                        : isAwaitingApproval
+                          ? "Awaiting approval"
+                          : "Send"}
                 </button>
             </footer>
         </div>

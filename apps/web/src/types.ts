@@ -1,12 +1,26 @@
 export type MessageRole =
     | "user"
     | "assistant"
-    | "system";
+    | "system"
+    | "approval";
 
 export interface ChatMessage {
     id: string;
     role: MessageRole;
     content: string;
+}
+
+export type ToolStepStatus =
+    | "running"
+    | "completed"
+    | "failed";
+
+export interface ToolStep {
+    id: string;
+    toolName: string;
+    status: ToolStepStatus;
+    argumentsJson?: string;
+    result?: string;
 }
 
 export interface PendingApproval {
@@ -18,6 +32,8 @@ export interface PendingApproval {
 export type SessionEventType =
     | "connected"
     | "agent_started"
+    | "tool_call"
+    | "tool_result"
     | "approval_required"
     | "approval_resolved"
     | "agent_completed"

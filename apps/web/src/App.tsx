@@ -6,6 +6,8 @@ import {
 import {
     createSessionId,
     parseApprovalEvent,
+    parseToolCallEvent,
+    parseToolResultEvent,
     respondToApproval,
     sendChatMessage,
     subscribeToSessionEvents,
@@ -22,6 +24,7 @@ import {
 import type {
     ChatMessage,
     PendingApproval,
+    ToolStep,
 } from "./types";
 
 import "./App.css";
@@ -37,6 +40,34 @@ function createMessage(
     };
 }
 
+function upsertToolStep(
+    steps: ToolStep[],
+    nextStep: ToolStep
+): ToolStep[] {
+
+    const index =
+        steps.findIndex(
+            step =>
+                step.id === nextStep.id
+        );
+
+    if (index === -1) {
+        return [
+            ...steps,
+            nextStep,
+        ];
+    }
+
+    const updated = [...steps];
+
+    updated[index] = {
+        ...updated[index],
+        ...nextStep,
+    };
+
+    return updated;
+}
+
 export default function App() {
 
     const [sessionId] = useState(
@@ -45,6 +76,9 @@ export default function App() {
 
     const [messages, setMessages] =
         useState<ChatMessage[]>([]);
+
+    const [toolSteps, setToolSteps] =
+        useState<ToolStep[]>([]);
 
     const [input, setInput] =
         useState("");
@@ -74,8 +108,50 @@ export default function App() {
                         event.type ===
                         "agent_started"
                     ) {
+                        setToolSteps([]);
                         setStatusText(
                             "Agent is working..."
+                        );
+                    }
+
+                    const toolCall =
+                        parseToolCallEvent(
+                            event
+                        );
+
+                    if (toolCall) {
+                        setToolSteps(
+                            current =>
+                                upsertToolStep(
+                                    current,
+                                    toolCall
+                                )
+                        );
+                    }
+
+                    const toolResult =
+                        parseToolResultEvent(
+                            event
+                        );
+
+                    if (toolResult) {
+                        setToolSteps(
+                            current =>
+                                upsertToolStep(
+                                    current,
+                                    {
+                                        id:
+                                            toolResult.stepId,
+                                        toolName:
+                                            toolResult.toolName,
+                                        status:
+                                            toolResult.success
+                                                ? "completed"
+                                                : "failed",
+                                        result:
+                                            toolResult.result,
+                                    }
+                                )
                         );
                     }
 
@@ -102,11 +178,30 @@ export default function App() {
                         event.type ===
                         "approval_resolved"
                     ) {
+                        const approved =
+                            event.data?.approved ===
+                            true;
+
                         setPendingApproval(
                             null
                         );
+
+                        setMessages(
+                            current => [
+                                ...current,
+                                createMessage(
+                                    "approval",
+                                    approved
+                                        ? "Order placement approved."
+                                        : "Order placement was rejected."
+                                ),
+                            ]
+                        );
+
                         setStatusText(
-                            "Resuming agent..."
+                            approved
+                                ? "Resuming agent..."
+                                : "Ready"
                         );
                     }
 
@@ -139,7 +234,11 @@ export default function App() {
         const message =
             input.trim();
 
-        if (!message || isLoading) {
+        if (
+            !message ||
+            isLoading ||
+            pendingApproval
+        ) {
             return;
         }
 
@@ -152,6 +251,7 @@ export default function App() {
         ]);
 
         setInput("");
+        setToolSteps([]);
         setIsLoading(true);
         setStatusText(
             "Sending request..."
@@ -195,7 +295,6 @@ export default function App() {
         } finally {
 
             setIsLoading(false);
-            setPendingApproval(null);
         }
     }
 
@@ -220,13 +319,6 @@ export default function App() {
                 approved
             );
 
-            if (!approved) {
-                setPendingApproval(null);
-                setStatusText(
-                    "Approval rejected"
-                );
-            }
-
         } catch (error) {
 
             const errorMessage =
@@ -242,6 +334,8 @@ export default function App() {
                 ),
             ]);
 
+            setPendingApproval(null);
+
         } finally {
 
             setIsSubmittingApproval(false);
@@ -252,8 +346,12 @@ export default function App() {
         <div className="app">
             <ChatWindow
                 messages={messages}
+                toolSteps={toolSteps}
                 statusText={statusText}
                 isLoading={isLoading}
+                isAwaitingApproval={
+                    pendingApproval !== null
+                }
                 input={input}
                 onInputChange={setInput}
                 onSubmit={handleSend}
