@@ -10,7 +10,11 @@ import express from "express";
 
 import {
     closeDatabase,
-} from "../../../src/db/database";
+} from "../../../src/db/initializeDatabase";
+
+import {
+    config,
+} from "../../../src/config";
 
 import {
     agentAppService,
@@ -28,11 +32,12 @@ import {
     eventsRouter,
 } from "./routes/events";
 
+import {
+    freeDevPort,
+} from "./freeDevPort";
 
-const PORT =
-    Number(
-        process.env.API_PORT ?? 3001
-    );
+
+const PORT = config.api.port;
 
 let httpServer: Server | null = null;
 let isShuttingDown = false;
@@ -90,7 +95,7 @@ async function shutdown(
         );
     }
 
-    closeDatabase();
+    await closeDatabase();
 
     process.exit(0);
 }
@@ -98,13 +103,13 @@ async function shutdown(
 
 async function main() {
 
+    await freeDevPort(PORT);
+
     const app = express();
 
     app.use(
         cors({
-            origin:
-                process.env.WEB_ORIGIN ??
-                "http://localhost:5173",
+            origin: config.web.origin,
         })
     );
 

@@ -14,9 +14,9 @@ export class SqliteInventoryRepository
             Database.Database
     ) {}
 
-    findByProductId(
+    async findByProductId(
         productId: string
-    ): Inventory | null {
+    ): Promise<Inventory | null> {
 
         const row =
             this.db.prepare(`
@@ -46,10 +46,10 @@ export class SqliteInventoryRepository
         };
     }
 
-    deductStock(
+    async deductStock(
         productId: string,
         quantity: number
-    ): boolean {
+    ): Promise<boolean> {
 
         const result =
             this.db.prepare(`

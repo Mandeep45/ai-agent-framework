@@ -24,7 +24,7 @@ export class InventoryService {
         );
 
         const inventory =
-            this.inventoryRepository
+            await this.inventoryRepository
                 .findByProductId(
                     productId
                 );

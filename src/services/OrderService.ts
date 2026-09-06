@@ -1,5 +1,3 @@
-import type Database from "better-sqlite3";
-
 import { Logger } from "../logger/Logger";
 import { Order } from "../types/Order";
 import { CustomerNotFoundError } from "../errors/CustomerNotFoundError";
@@ -9,11 +7,8 @@ import {
     CustomerRepository,
 } from "../repositories/CustomerRepository";
 import {
-    InventoryRepository,
-} from "../repositories/InventoryRepository";
-import {
-    OrderRepository,
-} from "../repositories/OrderRepository";
+    DatabaseProvider,
+} from "../db/DatabaseProvider";
 
 export class OrderService {
 
@@ -23,14 +18,8 @@ export class OrderService {
         private readonly customerRepository:
             CustomerRepository,
 
-        private readonly inventoryRepository:
-            InventoryRepository,
-
-        private readonly orderRepository:
-            OrderRepository,
-
-        private readonly db:
-            Database.Database
+        private readonly databaseProvider:
+            DatabaseProvider
     ) {}
 
     async placeOrder(
@@ -49,7 +38,7 @@ export class OrderService {
         );
 
         const customer =
-            this.customerRepository
+            await this.customerRepository
                 .findById(customerId);
 
         if (!customer) {
@@ -59,7 +48,9 @@ export class OrderService {
         }
 
         const inventory =
-            this.inventoryRepository
+            await this.databaseProvider
+                .repositories
+                .inventoryRepository
                 .findByProductId(
                     productId
                 );
@@ -82,34 +73,37 @@ export class OrderService {
         }
 
         const order =
-            this.db.transaction(
-                () => {
+            await this.databaseProvider
+                .withTransaction(
+                    async repositories => {
 
-                    const deducted =
-                        this.inventoryRepository
-                            .deductStock(
+                        const deducted =
+                            await repositories
+                                .inventoryRepository
+                                .deductStock(
+                                    productId,
+                                    quantity
+                                );
+
+                        if (
+                            !deducted
+                        ) {
+                            throw new InsufficientStockError(
                                 productId,
-                                quantity
+                                quantity,
+                                inventory.quantity
                             );
+                        }
 
-                    if (
-                        !deducted
-                    ) {
-                        throw new InsufficientStockError(
-                            productId,
-                            quantity,
-                            inventory.quantity
-                        );
+                        return repositories
+                            .orderRepository
+                            .create({
+                                customerId,
+                                productId,
+                                quantity,
+                            });
                     }
-
-                    return this.orderRepository
-                        .create({
-                            customerId,
-                            productId,
-                            quantity,
-                        });
-                }
-            )();
+                );
 
         this.logger.info(
             "[OrderService] Order confirmed",
@@ -129,7 +123,7 @@ export class OrderService {
         );
 
         const customer =
-            this.customerRepository
+            await this.customerRepository
                 .findById(customerId);
 
         if (!customer) {
@@ -139,7 +133,9 @@ export class OrderService {
         }
 
         const orders =
-            this.orderRepository
+            await this.databaseProvider
+                .repositories
+                .orderRepository
                 .findByCustomerId(
                     customerId
                 );

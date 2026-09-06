@@ -21,7 +21,7 @@ export class ProductService {
         );
 
         const products =
-            this.productRepository
+            await this.productRepository
                 .listAll();
 
         this.logger.info(

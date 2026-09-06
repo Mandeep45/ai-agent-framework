@@ -1,5 +1,15 @@
 import "dotenv/config";
 
+import path from "node:path";
+
+import {
+    getDefaultMcpServerCommand,
+    getDefaultMcpServerPath,
+} from "./config/mcpDefaults";
+import {
+    getProjectRoot,
+} from "./utils/projectRoot";
+
 
 function getEnv(
     name: string,
@@ -23,6 +33,24 @@ function getEnv(
     throw new Error(
         `Missing required environment variable: ${name}`
     );
+}
+
+
+function getOptionalEnv(
+    name: string
+): string | undefined {
+
+    const value =
+        process.env[name];
+
+    if (
+        value === undefined ||
+        value.trim() === ""
+    ) {
+        return undefined;
+    }
+
+    return value;
 }
 
 
@@ -59,6 +87,12 @@ function getNumberEnv(
 
 export const config = {
 
+    nodeEnv:
+        getEnv(
+            "NODE_ENV",
+            "development"
+        ),
+
     groq: {
         apiKey:
             getEnv("GROQ_API_KEY"),
@@ -94,13 +128,13 @@ export const config = {
         command:
             getEnv(
                 "MCP_SERVER_COMMAND",
-                "tsx"
+                getDefaultMcpServerCommand()
             ),
 
         serverPath:
             getEnv(
                 "MCP_SERVER_PATH",
-                "src/mcp/server.ts"
+                getDefaultMcpServerPath()
             ),
 
         timeoutMs:
@@ -111,11 +145,42 @@ export const config = {
     },
 
     database: {
-        path:
+        url:
+            getOptionalEnv(
+                "DATABASE_URL"
+            ),
+
+        sqlitePath:
             getEnv(
                 "DATABASE_PATH",
                 "data/app.db"
             ),
     },
 
+    api: {
+        port:
+            getNumberEnv(
+                "API_PORT",
+                3001
+            ),
+    },
+
+    web: {
+        origin:
+            getEnv(
+                "WEB_ORIGIN",
+                "http://localhost:5173"
+            ),
+    },
+
 } as const;
+
+export function resolveProjectPath(
+    relativePath: string
+): string {
+
+    return path.resolve(
+        getProjectRoot(),
+        relativePath
+    );
+}

@@ -19,8 +19,9 @@ approvalRouter.post(
         res: Response
     ) => {
 
-        const approvalId =
-            req.params.approvalId;
+        const approvalId = String(
+            req.params.approvalId
+        );
 
         const sessionId =
             req.body?.sessionId;

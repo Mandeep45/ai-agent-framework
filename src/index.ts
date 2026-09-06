@@ -10,13 +10,22 @@ import { GroqProvider } from "./llm/GroqProvider";
 import {
     createDomainServices,
 } from "./db/createDomainServices";
+import {
+    ensureDatabase,
+} from "./db/initializeDatabase";
 import "dotenv/config";
 
 async function main() {
   const registry = new ToolRegistry();
 
   const logger = new ConsoleLogger();
-  const { customerService } = createDomainServices(logger);
+  const databaseProvider =
+      await ensureDatabase();
+  const { customerService } =
+      createDomainServices(
+          logger,
+          databaseProvider
+      );
   const customerTool = new CustomerTool(customerService);
 
   registry.register(customerTool);

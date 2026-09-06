@@ -9,9 +9,9 @@ export interface CreateOrderInput {
 export interface OrderRepository {
     create(
         input: CreateOrderInput
-    ): Order;
+    ): Promise<Order>;
 
     findByCustomerId(
         customerId: string
-    ): Order[];
+    ): Promise<Order[]>;
 }

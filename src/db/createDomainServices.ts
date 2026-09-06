@@ -12,20 +12,8 @@ import {
     ProductService,
 } from "../services/ProductService";
 import {
-    getDatabase,
-} from "./database";
-import {
-    SqliteCustomerRepository,
-} from "../repositories/sqlite/SqliteCustomerRepository";
-import {
-    SqliteInventoryRepository,
-} from "../repositories/sqlite/SqliteInventoryRepository";
-import {
-    SqliteOrderRepository,
-} from "../repositories/sqlite/SqliteOrderRepository";
-import {
-    SqliteProductRepository,
-} from "../repositories/sqlite/SqliteProductRepository";
+    DatabaseProvider,
+} from "./DatabaseProvider";
 
 
 export interface DomainServices {
@@ -36,30 +24,16 @@ export interface DomainServices {
 }
 
 export function createDomainServices(
-    logger: Logger
+    logger: Logger,
+    databaseProvider: DatabaseProvider
 ): DomainServices {
 
-    const db = getDatabase();
-
-    const customerRepository =
-        new SqliteCustomerRepository(
-            db
-        );
-
-    const inventoryRepository =
-        new SqliteInventoryRepository(
-            db
-        );
-
-    const orderRepository =
-        new SqliteOrderRepository(
-            db
-        );
-
-    const productRepository =
-        new SqliteProductRepository(
-            db
-        );
+    const {
+        customerRepository,
+        inventoryRepository,
+        orderRepository,
+        productRepository,
+    } = databaseProvider.repositories;
 
     return {
         customerService:
@@ -78,9 +52,7 @@ export function createDomainServices(
             new OrderService(
                 logger,
                 customerRepository,
-                inventoryRepository,
-                orderRepository,
-                db
+                databaseProvider
             ),
 
         productService:
