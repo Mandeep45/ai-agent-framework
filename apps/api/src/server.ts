@@ -127,9 +127,56 @@ async function main() {
 
     const app = express();
 
+    const allowedOrigins =
+        config.web.origins;
+
     app.use(
         cors({
-            origin: config.web.origin,
+            origin(
+                origin,
+                callback
+            ) {
+
+                if (!origin) {
+                    callback(
+                        null,
+                        true
+                    );
+                    return;
+                }
+
+                const normalized =
+                    origin.replace(
+                        /\/$/,
+                        ""
+                    );
+
+                const isAllowed =
+                    allowedOrigins.some(
+                        allowed =>
+                            allowed ===
+                                origin ||
+                            allowed ===
+                                normalized
+                    );
+
+                callback(
+                    null,
+                    isAllowed
+                );
+            },
+
+            methods: [
+                "GET",
+                "POST",
+                "OPTIONS",
+            ],
+
+            allowedHeaders: [
+                "Content-Type",
+                "x-api-key",
+                "Authorization",
+            ],
         })
     );
 

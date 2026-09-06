@@ -101,6 +101,28 @@ function getListenPort(): number {
 }
 
 
+function getWebOrigins(): string[] {
+
+    const raw =
+        getEnv(
+            "WEB_ORIGIN",
+            "http://localhost:5173"
+        );
+
+    return raw
+        .split(",")
+        .map(origin =>
+            origin
+                .trim()
+                .replace(/\/$/, "")
+        )
+        .filter(
+            origin =>
+                origin.length > 0
+        );
+}
+
+
 export const config = {
 
     nodeEnv:
@@ -185,11 +207,8 @@ export const config = {
     },
 
     web: {
-        origin:
-            getEnv(
-                "WEB_ORIGIN",
-                "http://localhost:5173"
-            ),
+        origins:
+            getWebOrigins(),
     },
 
 } as const;

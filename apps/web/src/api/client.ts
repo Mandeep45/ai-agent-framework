@@ -49,6 +49,40 @@ export function createSessionId(): string {
     return crypto.randomUUID();
 }
 
+function getFrontendConfigError():
+    string | null {
+
+    const hostname =
+        window.location.hostname;
+
+    const isLocal =
+        hostname === "localhost" ||
+        hostname === "127.0.0.1";
+
+    if (
+        !isLocal &&
+        API_BASE === "/api"
+    ) {
+        return (
+            "Frontend is not configured with VITE_API_URL. " +
+            "Set it on Render to your API URL (e.g. https://order-assistant-api.onrender.com) " +
+            "and redeploy the web service."
+        );
+    }
+
+    if (
+        !isLocal &&
+        !API_KEY
+    ) {
+        return (
+            "Frontend is missing VITE_API_KEY. " +
+            "Link it to the API service API_KEY on Render and redeploy the web service."
+        );
+    }
+
+    return null;
+}
+
 export async function sendChatMessage(
     sessionId: string,
     message: string
@@ -57,19 +91,42 @@ export async function sendChatMessage(
     output: string;
 }> {
 
-    const response = await fetch(
-        `${API_BASE}/chat`,
-        {
-            method: "POST",
-            headers: buildAuthHeaders(
-                true
-            ),
-            body: JSON.stringify({
-                sessionId,
-                message,
-            }),
-        }
-    );
+    const configError =
+        getFrontendConfigError();
+
+    if (configError) {
+        throw new Error(configError);
+    }
+
+    const url =
+        `${API_BASE}/chat`;
+
+    let response: Response;
+
+    try {
+
+        response = await fetch(
+            url,
+            {
+                method: "POST",
+                headers: buildAuthHeaders(
+                    true
+                ),
+                body: JSON.stringify({
+                    sessionId,
+                    message,
+                }),
+            }
+        );
+
+    } catch (error) {
+
+        throw new Error(
+            `Cannot reach API at ${url}. ` +
+                `Set WEB_ORIGIN on the API to ${window.location.origin} ` +
+                `and VITE_API_URL on the web to your API URL, then redeploy both.`
+        );
+    }
 
     const data = await response.json();
 
