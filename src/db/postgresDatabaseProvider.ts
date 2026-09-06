@@ -55,19 +55,23 @@ function createPostgresRepositories(
 
 
 async function seedPostgres(
-    pool: Pool
+    pool: Pool,
+    force = false
 ): Promise<void> {
 
-    const result =
-        await pool.query(
-            "SELECT COUNT(*)::int AS count FROM customers"
-        );
+    if (!force) {
 
-    const count =
-        result.rows[0]?.count ?? 0;
+        const result =
+            await pool.query(
+                "SELECT COUNT(*)::int AS count FROM customers"
+            );
 
-    if (count > 0) {
-        return;
+        const count =
+            result.rows[0]?.count ?? 0;
+
+        if (count > 0) {
+            return;
+        }
     }
 
     for (const customer of SEED_CUSTOMERS) {
@@ -177,6 +181,49 @@ export class PostgresDatabaseProvider
 
     async close(): Promise<void> {
         await this.pool.end();
+    }
+}
+
+
+export async function resetPostgresData(
+    databaseUrl: string
+): Promise<void> {
+
+    const pool = new Pool({
+        connectionString:
+            databaseUrl,
+        ssl:
+            process.env.DATABASE_SSL ===
+            "true"
+                ? {
+                    rejectUnauthorized:
+                        false,
+                }
+                : undefined,
+    });
+
+    try {
+
+        await pool.query(
+            POSTGRES_SCHEMA
+        );
+
+        await pool.query(`
+            TRUNCATE TABLE
+                orders,
+                inventory,
+                products,
+                customers
+            RESTART IDENTITY CASCADE
+        `);
+
+        await seedPostgres(
+            pool,
+            true
+        );
+
+    } finally {
+        await pool.end();
     }
 }
 

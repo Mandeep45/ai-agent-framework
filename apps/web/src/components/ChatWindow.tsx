@@ -75,7 +75,7 @@ export function ChatWindow({
                         <p>
                             Try: Find customer
                             ABC, check inventory
-                            for product XYZ,
+                            for product IPH14,
                             and place an order
                             for 1 unit.
                         </p>

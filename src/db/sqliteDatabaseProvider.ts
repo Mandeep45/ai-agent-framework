@@ -54,16 +54,20 @@ function ensureDataDirectory(
 
 
 function seedSqlite(
-    db: Database.Database
+    db: Database.Database,
+    force = false
 ): void {
 
-    const customerCount =
-        db.prepare(
-            "SELECT COUNT(*) AS count FROM customers"
-        ).get() as { count: number };
+    if (!force) {
 
-    if (customerCount.count > 0) {
-        return;
+        const customerCount =
+            db.prepare(
+                "SELECT COUNT(*) AS count FROM customers"
+            ).get() as { count: number };
+
+        if (customerCount.count > 0) {
+            return;
+        }
     }
 
     const insertCustomer =
@@ -176,6 +180,48 @@ export class SqliteDatabaseProvider
     async close(): Promise<void> {
         this.db.close();
     }
+}
+
+
+export function resetSqliteData(): void {
+
+    const dbPath =
+        path.resolve(
+            getProjectRoot(),
+            config.database.sqlitePath
+        );
+
+    ensureDataDirectory(
+        dbPath
+    );
+
+    const db = new Database(
+        dbPath
+    );
+
+    db.pragma(
+        "journal_mode = WAL"
+    );
+
+    db.pragma(
+        "foreign_keys = ON"
+    );
+
+    db.exec(SQLITE_SCHEMA);
+
+    db.exec(`
+        DELETE FROM orders;
+        DELETE FROM inventory;
+        DELETE FROM products;
+        DELETE FROM customers;
+    `);
+
+    seedSqlite(
+        db,
+        true
+    );
+
+    db.close();
 }
 
 
