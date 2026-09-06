@@ -36,10 +36,6 @@ import {
     apiKeyAuth,
 } from "./middleware/apiKeyAuth";
 
-import {
-    freeDevPort,
-} from "./freeDevPort";
-
 
 const PORT = config.api.port;
 
@@ -117,7 +113,17 @@ async function main() {
         );
     }
 
-    await freeDevPort(PORT);
+    if (
+        config.nodeEnv !==
+        "production"
+    ) {
+        const { freeDevPort } =
+            await import(
+                "./freeDevPort.js"
+            );
+
+        await freeDevPort(PORT);
+    }
 
     const app = express();
 
