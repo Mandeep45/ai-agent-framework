@@ -5,3 +5,4 @@ data/
 coverage
 .vscode
 .DS_Store
+package-lock.json

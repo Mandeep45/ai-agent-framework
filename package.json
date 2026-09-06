@@ -1,6 +1,7 @@
 {
   "name": "ai-agent-framework",
   "version": "1.0.0",
+  "private": true,
   "description": "A from-scratch AI Agent framework built with Node.js and TypeScript",
   "license": "ISC",
   "author": "",
