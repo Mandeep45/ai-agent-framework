@@ -204,6 +204,20 @@ export const config = {
             getOptionalEnv(
                 "API_KEY"
             ),
+
+        rateLimit: {
+            windowMs:
+                getNumberEnv(
+                    "RATE_LIMIT_WINDOW_MS",
+                    60_000
+                ),
+
+            maxRequests:
+                getNumberEnv(
+                    "RATE_LIMIT_MAX_REQUESTS",
+                    30
+                ),
+        },
     },
 
     web: {

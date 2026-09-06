@@ -5,9 +5,6 @@ import type {
     Server,
 } from "node:http";
 
-import cors from "cors";
-import express from "express";
-
 import {
     closeDatabase,
 } from "../../../src/db/initializeDatabase";
@@ -21,28 +18,8 @@ import {
 } from "./services/AgentAppService";
 
 import {
-    chatRouter,
-} from "./routes/chat";
-
-import {
-    approvalRouter,
-} from "./routes/approval";
-
-import {
-    eventsRouter,
-} from "./routes/events";
-
-import {
-    ordersRouter,
-} from "./routes/orders";
-
-import {
-    sessionsRouter,
-} from "./routes/sessions";
-
-import {
-    apiKeyAuth,
-} from "./middleware/apiKeyAuth";
+    createApp,
+} from "./createApp";
 
 
 const PORT = config.api.port;
@@ -133,108 +110,7 @@ async function main() {
         await freeDevPort(PORT);
     }
 
-    const app = express();
-
-    const allowedOrigins =
-        config.web.origins;
-
-    app.use(
-        cors({
-            origin(
-                origin,
-                callback
-            ) {
-
-                if (!origin) {
-                    callback(
-                        null,
-                        true
-                    );
-                    return;
-                }
-
-                const normalized =
-                    origin.replace(
-                        /\/$/,
-                        ""
-                    );
-
-                const isAllowed =
-                    allowedOrigins.some(
-                        allowed =>
-                            allowed ===
-                                origin ||
-                            allowed ===
-                                normalized
-                    );
-
-                callback(
-                    null,
-                    isAllowed
-                );
-            },
-
-            methods: [
-                "GET",
-                "POST",
-                "OPTIONS",
-            ],
-
-            allowedHeaders: [
-                "Content-Type",
-                "x-api-key",
-                "Authorization",
-            ],
-        })
-    );
-
-    app.use(
-        express.json()
-    );
-
-    app.get(
-        "/api/health",
-        (
-            _req: express.Request,
-            res: express.Response
-        ) => {
-            res.json({
-                status: "ok",
-            });
-        }
-    );
-
-    app.use(
-        "/api/chat",
-        apiKeyAuth,
-        chatRouter
-    );
-
-    app.use(
-        "/api/approval",
-        apiKeyAuth,
-        approvalRouter
-    );
-
-    app.use(
-        "/api/events",
-        apiKeyAuth,
-        eventsRouter
-    );
-
-    app.use(
-        "/api/orders",
-        apiKeyAuth,
-        ordersRouter
-    );
-
-    app.use(
-        "/api/sessions",
-        apiKeyAuth,
-        sessionsRouter
-    );
-
-    await agentAppService.initialize();
+    const app = await createApp();
 
     const server = app.listen(
         PORT,

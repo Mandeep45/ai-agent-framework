@@ -5,7 +5,7 @@ An educational AI agent framework built from scratch with TypeScript, plus a ful
 ## Features
 
 - Chat with an AI order assistant
-- MCP tools: customer lookup, inventory, product list, order history, place order, cancel order
+- MCP tools: customer lookup, inventory, product list, order history, get order, place order, cancel order
 - Human approval for sensitive actions (`place_order`, `cancel_order`)
 - Live tool-step timeline via SSE
 - SQLite for local dev, PostgreSQL for production
@@ -69,7 +69,9 @@ yarn dev:app
 | `yarn build:app` | Production build (API + web) |
 | `yarn start:prod` | Start production API |
 | `yarn db:reset` | Wipe DB and reload seed data |
-| `yarn test` | Run tests |
+| `yarn test` | Run all tests |
+| `yarn test:unit` | Run unit tests only |
+| `yarn test:integration` | Run integration tests (isolated test DB) |
 
 ## Environment variables
 
@@ -85,10 +87,12 @@ yarn dev:app
 | `DATABASE_SSL` | Prod | Set `true` for managed Postgres |
 | `VITE_API_URL` | Prod build | API base URL (e.g. `https://your-api.onrender.com`) |
 | `VITE_API_KEY` | Prod build | Same value as `API_KEY` |
+| `RATE_LIMIT_WINDOW_MS` | No | Chat rate limit window (default `60000`) |
+| `RATE_LIMIT_MAX_REQUESTS` | No | Max chat requests per window (default `30`) |
 
 ## API authentication
 
-When `API_KEY` is set, all `/api/chat`, `/api/approval`, and `/api/events` routes require authentication via:
+When `API_KEY` is set, all `/api/chat`, `/api/approval`, `/api/events`, `/api/orders`, and `/api/sessions` routes require authentication via:
 
 - `x-api-key: <key>` header, or
 - `Authorization: Bearer <key>` header, or
@@ -96,7 +100,28 @@ When `API_KEY` is set, all `/api/chat`, `/api/approval`, and `/api/events` route
 
 `/api/health` stays public.
 
+`POST /api/chat` is rate-limited (default: 30 requests per minute per client).
+
 In development, `API_KEY` is optional. In production, the server refuses to start without it.
+
+## Production vs experimental code
+
+The live Order Assistant uses:
+
+| Path | Purpose |
+|------|---------|
+| `apps/api/` + `apps/web/` | Deployed full-stack app |
+| `src/agents-sdk/` + `src/mcp/server.ts` | Production agent + tools |
+
+Learning / experiments (not wired to the web UI):
+
+| Path | Purpose |
+|------|---------|
+| `src/agent/` | Custom agent built from scratch |
+| `src/langgraph/` | LangGraph demos |
+| `src/mcp/agentIndex.ts` | CLI MCP examples |
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full request flow and diagrams.
 
 ## Deploy to Render
 
@@ -127,6 +152,8 @@ DATABASE_URL=postgresql://... DATABASE_SSL=true yarn db:reset
 `API_KEY` is auto-generated on the API service. The static site receives it as `VITE_API_KEY` via `fromService`.
 
 ## Architecture
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams, MCP tools, API routes, and security.
 
 ```
 React UI  →  Express API  →  AgentRunner + MCP subprocess

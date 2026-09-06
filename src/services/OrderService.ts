@@ -199,6 +199,30 @@ export class OrderService {
         return orders;
     }
 
+    async getOrder(
+        orderId: string
+    ): Promise<Order> {
+
+        this.logger.info(
+            "[OrderService] Fetching order",
+            { orderId }
+        );
+
+        const order =
+            await this.databaseProvider
+                .repositories
+                .orderRepository
+                .findById(orderId);
+
+        if (!order) {
+            throw new OrderNotFoundError(
+                orderId
+            );
+        }
+
+        return order;
+    }
+
     async cancelOrder(
         orderId: string
     ): Promise<Order> {

@@ -34,6 +34,10 @@ export async function getDomainServices():
     return domainServices;
 }
 
+export function resetDomainServicesCache(): void {
+    domainServices = null;
+}
+
 export async function getChatRepository() {
 
     const databaseProvider =

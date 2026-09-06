@@ -155,6 +155,37 @@ async function main() {
     );
 
     server.registerTool(
+        "get_order",
+        {
+            description:
+                "Get a single order by order ID",
+
+            inputSchema: {
+                orderId: z.string(),
+            },
+        },
+
+        async ({ orderId }) => {
+
+            const order =
+                await orderService.getOrder(
+                    orderId
+                );
+
+            return {
+                content: [
+                    {
+                        type: "text" as const,
+                        text: JSON.stringify(
+                            order
+                        ),
+                    },
+                ],
+            };
+        }
+    );
+
+    server.registerTool(
         "place_order",
         {
             description: "Place an order for a customer",

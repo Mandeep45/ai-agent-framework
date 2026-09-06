@@ -30,6 +30,8 @@
     "start": "node dist/index.js",
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
+    "test:unit": "tsx --test tests/Agent.test.ts",
+    "test:integration": "cross-env DATABASE_PATH=data/test-integration.db GROQ_API_KEY=test API_KEY=test-integration-key RATE_LIMIT_MAX_REQUESTS=2 tsx --test tests/**/*.integration.test.ts",
     "langgraph": "tsx src/langgraph/index.ts",
     "langgraph:approval": "tsx src/langgraph/approvalIndex.ts",
     "mcp": "tsx src/mcp/client.ts",

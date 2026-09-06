@@ -304,6 +304,7 @@ export function formatToolResult(
 
         case "place_order":
         case "cancel_order":
+        case "get_order":
             return formatOrder(data);
 
         default:

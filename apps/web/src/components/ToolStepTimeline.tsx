@@ -18,6 +18,8 @@ const TOOL_LABELS: Record<
         "Listing products",
     get_order_history:
         "Fetching order history",
+    get_order:
+        "Looking up order",
     place_order:
         "Placing order",
     cancel_order:
