@@ -10,16 +10,16 @@ import {
 
 import { llm } from "./llm";
 import { createCustomerTool } from "./customerTool";
-import { ConsoleLogger } from "../logger/ConsoleLogger";
+import { ConsoleLogger } from "../../src/logger/ConsoleLogger";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { createInventoryTool } from "./inventoryTool";
 import { createOrderTool } from "./orderTool";
 import {
     createDomainServices,
-} from "../db/createDomainServices";
+} from "../../src/db/createDomainServices";
 import {
     createSqliteProvider,
-} from "../db/sqliteDatabaseProvider";
+} from "../../src/db/sqliteDatabaseProvider";
 
 import z from "zod";
 

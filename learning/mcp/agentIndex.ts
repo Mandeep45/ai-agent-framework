@@ -9,7 +9,7 @@ import { Agent } from "../agent/Agent";
 import {  GroqProvider } from "../llm/GroqProvider";
 
 import { registerMcpTools } from "./McpToolAdapter";
-import { ConsoleLogger } from "../logger/ConsoleLogger";
+import { ConsoleLogger } from "../../src/logger/ConsoleLogger";
 
 async function main() {
 

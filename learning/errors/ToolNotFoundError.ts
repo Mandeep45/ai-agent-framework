@@ -1,4 +1,4 @@
-import { FrameworkError } from "./FrameworkError";
+import { FrameworkError } from "../../src/errors/FrameworkError";
 
 export class ToolNotFoundError extends FrameworkError {
     constructor(toolName: string) {

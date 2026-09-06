@@ -8,7 +8,7 @@ import * as readline from "node:readline/promises";
 import {
     ApprovalHandler,
     ApprovalRequest,
-} from "./ApprovalHandler";
+} from "../../src/approval/ApprovalHandler";
 
 
 export class CliApprovalHandler

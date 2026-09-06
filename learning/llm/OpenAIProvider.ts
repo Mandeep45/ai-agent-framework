@@ -4,7 +4,7 @@ import { LLMProvider } from "./LLMProvider";
 import { Message } from "../types/message";
 import { ToolDefinition } from "../types/ToolDefinition";
 import { LLMResponse } from "../types/LLMResponse";
-import { Logger } from "../logger/Logger";
+import { Logger } from "../../src/logger/Logger";
 import "dotenv/config";
 
 export class OpenAIProvider implements LLMProvider {

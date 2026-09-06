@@ -6,7 +6,7 @@
   "license": "ISC",
   "author": "",
   "type": "commonjs",
-  "main": "dist/index.js",
+  "main": "dist/apps/api/src/server.js",
   "workspaces": [
     "apps/*"
   ],
@@ -14,7 +14,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "dev": "tsx learning/index.ts",
     "predev:api": "tsx scripts/free-port.ts 3001",
     "dev:api": "tsx watch apps/api/src/server.ts",
     "predev:web": "tsx scripts/free-port.ts 5173",
@@ -27,17 +27,17 @@
     "build:app": "npm run build && npm run build:web",
     "start:api": "cross-env NODE_ENV=production node dist/apps/api/src/server.js",
     "start:prod": "npm run start:api",
-    "start": "node dist/index.js",
+    "start": "npm run start:api",
     "type-check": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
-    "test:unit": "tsx --test tests/Agent.test.ts",
+    "test:unit": "tsx --test learning/tests/**/*.test.ts",
     "test:integration": "cross-env DATABASE_PATH=data/test-integration.db GROQ_API_KEY=test API_KEY=test-integration-key RATE_LIMIT_MAX_REQUESTS=2 tsx --test tests/**/*.integration.test.ts",
-    "langgraph": "tsx src/langgraph/index.ts",
-    "langgraph:approval": "tsx src/langgraph/approvalIndex.ts",
-    "mcp": "tsx src/mcp/client.ts",
-    "mcp:agent": "tsx src/mcp/agentIndex.ts",
-    "agents-sdk": "tsx src/agents-sdk/index.ts",
-    "agents-sdk:mcp": "tsx src/agents-sdk/mcpAgentIndex.ts"
+    "langgraph": "tsx learning/langgraph/index.ts",
+    "langgraph:approval": "tsx learning/langgraph/approvalIndex.ts",
+    "mcp": "tsx learning/mcp/client.ts",
+    "mcp:agent": "tsx learning/mcp/agentIndex.ts",
+    "agents-sdk": "tsx learning/agents-sdk/index.ts",
+    "agents-sdk:mcp": "tsx learning/agents-sdk/mcpAgentIndex.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

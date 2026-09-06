@@ -13,6 +13,8 @@
   },
   "include": [
     "src/**/*",
+    "apps/api/src/**/*",
+    "learning/**/*",
     "tests/**/*"
   ],
   "exclude": [

@@ -7,7 +7,7 @@ import {
 
 import {
     createGroqModel,
-} from "./groqmodel";
+} from "../../src/agents-sdk/groqmodel";
 
 import {
     getCustomerTool,

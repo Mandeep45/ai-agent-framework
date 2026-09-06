@@ -1,9 +1,9 @@
 import { LLMProvider } from "./LLMProvider";
-import { Logger } from "../logger/Logger";
+import { Logger } from "../../src/logger/Logger";
 import { Message } from "../types/message";
 import { ToolDefinition } from "../types/ToolDefinition";
 import { LLMResponse } from "../types/LLMResponse";
-import { Customer } from "../types/Customer";
+import { Customer } from "../../src/types/Customer";
 
 export class FakeLLMProvider implements LLMProvider {
     constructor(

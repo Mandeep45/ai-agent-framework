@@ -2,11 +2,11 @@ import "dotenv/config";
 
 import {
     AgentLogger,
-} from "../logger/AgentLogger";
+} from "../../src/logger/AgentLogger";
 
 import {
     ApprovalHandler,
-} from "../approval/ApprovalHandler";
+} from "../../src/approval/ApprovalHandler";
 
 import {
     CliApprovalHandler,
@@ -14,15 +14,15 @@ import {
 
 import {
     MCPAgentTools,
-} from "./MCPAgentTools";
+} from "../../src/agents-sdk/MCPAgentTools";
 
 import {
     createOrderAgent,
-} from "./OrderAgent";
+} from "../../src/agents-sdk/OrderAgent";
 
 import {
     AgentRunner,
-} from "./AgentRunner";
+} from "../../src/agents-sdk/AgentRunner";
 
 
 const INITIAL_REQUEST =

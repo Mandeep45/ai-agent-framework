@@ -4,15 +4,15 @@ import { FakeLLMProvider } from "./llm/FakeLLMProvider";
 import { ToolRegistry } from "./registry/ToolRegistry";
 
 import { CustomerTool } from "./tools/CustomerTool";
-import { ConsoleLogger } from "./logger/ConsoleLogger";
+import { ConsoleLogger } from "../src/logger/ConsoleLogger";
 import { OpenAIProvider } from "./llm/OpenAIProvider";
 import { GroqProvider } from "./llm/GroqProvider";
 import {
     createDomainServices,
-} from "./db/createDomainServices";
+} from "../src/db/createDomainServices";
 import {
     ensureDatabase,
-} from "./db/initializeDatabase";
+} from "../src/db/initializeDatabase";
 import "dotenv/config";
 
 async function main() {

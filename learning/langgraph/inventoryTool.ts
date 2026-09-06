@@ -1,7 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { InventoryService } from "../services/InventoryService";
+import { InventoryService } from "../../src/services/InventoryService";
 
 export function createInventoryTool(
     inventoryService: InventoryService

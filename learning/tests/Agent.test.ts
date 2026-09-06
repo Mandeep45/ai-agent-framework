@@ -1,15 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { Agent } from "../src/agent/Agent";
-import { MessageHistory } from "../src/agent/MessageHistory";
-import { ToolRegistry } from "../src/registry/ToolRegistry";
-import { LLMProvider } from "../src/llm/LLMProvider";
-import { Message } from "../src/types/message";
-import { ToolDefinition } from "../src/types/ToolDefinition";
-import { LLMResponse } from "../src/types/LLMResponse";
-import { ToolCall } from "../src/types/ToolCall";
-import { Tool } from "../src/types/tools";
+import { Agent } from "../agent/Agent";
+import { MessageHistory } from "../agent/MessageHistory";
+import { ToolRegistry } from "../registry/ToolRegistry";
+import { LLMProvider } from "../llm/LLMProvider";
+import { Message } from "../types/message";
+import { ToolDefinition } from "../types/ToolDefinition";
+import { LLMResponse } from "../types/LLMResponse";
+import { ToolCall } from "../types/ToolCall";
+import { Tool } from "../types/tools";
 
 class TestLLMProvider implements LLMProvider {
     private callCount = 0;

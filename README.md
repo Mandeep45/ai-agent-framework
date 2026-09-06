@@ -72,6 +72,10 @@ yarn dev:app
 | `yarn test` | Run all tests |
 | `yarn test:unit` | Run unit tests only |
 | `yarn test:integration` | Run integration tests (isolated test DB) |
+| `yarn dev` | Scratch-agent CLI demo (`learning/`) |
+| `yarn langgraph` | LangGraph demo |
+| `yarn mcp` / `yarn mcp:agent` | MCP client demos |
+| `yarn agents-sdk` / `yarn agents-sdk:mcp` | OpenAI Agents SDK demos |
 
 ## Environment variables
 
@@ -104,22 +108,31 @@ When `API_KEY` is set, all `/api/chat`, `/api/approval`, `/api/events`, `/api/or
 
 In development, `API_KEY` is optional. In production, the server refuses to start without it.
 
-## Production vs experimental code
+## Production vs learning code
 
-The live Order Assistant uses:
-
-| Path | Purpose |
-|------|---------|
-| `apps/api/` + `apps/web/` | Deployed full-stack app |
-| `src/agents-sdk/` + `src/mcp/server.ts` | Production agent + tools |
-
-Learning / experiments (not wired to the web UI):
+### Production (deployed Order Assistant)
 
 | Path | Purpose |
 |------|---------|
-| `src/agent/` | Custom agent built from scratch |
-| `src/langgraph/` | LangGraph demos |
-| `src/mcp/agentIndex.ts` | CLI MCP examples |
+| `apps/api/` + `apps/web/` | Full-stack app (Express + React) |
+| `src/agents-sdk/` | Groq agent + MCP integration |
+| `src/mcp/server.ts` | MCP tool server (stdio) |
+| `src/services/` + `src/repositories/` + `src/db/` | Domain layer + database |
+| `src/approval/` | Web approval handler (production) |
+
+### Learning (experiments, not in production build)
+
+All learning code lives under `learning/`:
+
+| Path | Purpose |
+|------|---------|
+| `learning/agent/` | Custom agent built from scratch |
+| `learning/langgraph/` | LangGraph demos |
+| `learning/mcp/` | MCP client + scratch-agent demos |
+| `learning/agents-sdk/` | CLI demos with stub tools |
+| `learning/llm/`, `learning/registry/`, etc. | Supporting learning modules |
+
+Run learning demos with `yarn dev`, `yarn langgraph`, `yarn mcp`, `yarn agents-sdk`, etc.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full request flow and diagrams.
 
@@ -166,10 +179,14 @@ React UI  →  Express API  →  AgentRunner + MCP subprocess
 ## Project structure
 
 ```
-apps/api/     Express API server
-apps/web/     React + Vite frontend
-src/          Agent core, MCP server, services, repositories
-data/         SQLite database (dev)
+apps/api/       Express API server (production)
+apps/web/       React + Vite frontend (production)
+src/            Domain layer, agent runtime, MCP server (production)
+learning/       Experiments and tutorials (excluded from prod build)
+docs/           Architecture documentation
+scripts/        DB reset, dev port helpers
+data/           SQLite database (dev)
+tests/          Integration tests
 ```
 
 ## License

@@ -1,7 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { CustomerService } from "../services/CustomerService";
+import { CustomerService } from "../../src/services/CustomerService";
 
 export function createCustomerTool(
     customerService: CustomerService

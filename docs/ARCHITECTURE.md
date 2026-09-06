@@ -39,7 +39,7 @@ flowchart TB
 8. **SSE** (`/api/events/:sessionId`) streams tool steps and approval events to the UI.
 9. Assistant reply is saved to `chat_messages` and returned to the client.
 
-## Production vs experimental code
+## Production vs learning code
 
 | Path | Role | Used in live app? |
 |------|------|-------------------|
@@ -47,11 +47,11 @@ flowchart TB
 | `src/agents-sdk/` | Groq agent + MCP integration | **Yes** |
 | `src/mcp/server.ts` | MCP tool server (stdio) | **Yes** |
 | `src/services/` + `src/repositories/` | Domain + data access | **Yes** |
-| `src/agent/` | Custom agent from scratch | No (learning) |
-| `src/langgraph/` | LangGraph experiments | No (learning) |
-| `src/mcp/agentIndex.ts` | CLI MCP demos | No (learning) |
+| `learning/` | Scratch agent, LangGraph, MCP/Agents SDK demos | No (learning) |
 
 The **production path** is: `apps/web` → `apps/api` → `agents-sdk` → MCP → services → DB.
+
+Learning code imports from `src/` but is excluded from the production TypeScript build (`tsconfig.build.json`).
 
 ## MCP tools
 

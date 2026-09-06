@@ -1,7 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
-import { OrderService } from "../services/OrderService";
+import { OrderService } from "../../src/services/OrderService";
 
 export const createOrderTool = (
     orderService: OrderService

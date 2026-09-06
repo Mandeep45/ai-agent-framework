@@ -1,6 +1,6 @@
 import { Tool } from "../types/tools";
 import { ToolDefinition } from "../types/ToolDefinition";
-import { CustomerService } from "../services/CustomerService";
+import { CustomerService } from "../../src/services/CustomerService";
 
 export class CustomerTool implements Tool {
     readonly definition: ToolDefinition = {
