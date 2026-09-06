@@ -10,7 +10,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    buildCommand: yarn install --frozen-lockfile --production=false && yarn build
+    buildCommand: yarn install && yarn build
     startCommand: node dist/apps/api/src/server.js
     healthCheckPath: /api/health
     envVars:
@@ -34,7 +34,7 @@ services:
   - type: web
     name: order-assistant-web
     runtime: static
-    buildCommand: yarn install --frozen-lockfile --production=false && yarn build:web
+    buildCommand: yarn install && yarn build:web
     staticPublishPath: apps/web/dist
     envVars:
       - key: VITE_API_URL

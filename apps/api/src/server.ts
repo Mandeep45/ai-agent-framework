@@ -133,7 +133,10 @@ async function main() {
 
     app.get(
         "/api/health",
-        (_req, res) => {
+        (
+            _req: express.Request,
+            res: express.Response
+        ) => {
             res.json({
                 status: "ok",
             });
@@ -160,7 +163,7 @@ async function main() {
 
     await agentAppService.initialize();
 
-    httpServer = app.listen(
+    const server = app.listen(
         PORT,
         () => {
             console.log(
@@ -169,7 +172,9 @@ async function main() {
         }
     );
 
-    httpServer.on(
+    httpServer = server;
+
+    server.on(
         "error",
         error => {
 
