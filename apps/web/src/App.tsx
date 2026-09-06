@@ -70,9 +70,8 @@ function upsertToolStep(
 
 export default function App() {
 
-    const [sessionId] = useState(
-        createSessionId
-    );
+    const [sessionId, setSessionId] =
+        useState(createSessionId);
 
     const [messages, setMessages] =
         useState<ChatMessage[]>([]);
@@ -192,8 +191,8 @@ export default function App() {
                                 createMessage(
                                     "approval",
                                     approved
-                                        ? "Order placement approved."
-                                        : "Order placement was rejected."
+                                        ? `${pendingApproval?.toolName ?? "Action"} approved.`
+                                        : `${pendingApproval?.toolName ?? "Action"} was rejected.`
                                 ),
                             ]
                         );
@@ -342,6 +341,25 @@ export default function App() {
         }
     }
 
+    function handleNewChat() {
+
+        if (
+            isLoading ||
+            isSubmittingApproval
+        ) {
+            return;
+        }
+
+        setSessionId(
+            createSessionId()
+        );
+        setMessages([]);
+        setToolSteps([]);
+        setInput("");
+        setStatusText("Ready");
+        setPendingApproval(null);
+    }
+
     return (
         <div className="app">
             <ChatWindow
@@ -355,6 +373,11 @@ export default function App() {
                 input={input}
                 onInputChange={setInput}
                 onSubmit={handleSend}
+                onNewChat={handleNewChat}
+                canStartNewChat={
+                    !isLoading &&
+                    !isSubmittingApproval
+                }
             />
 
             {pendingApproval && (

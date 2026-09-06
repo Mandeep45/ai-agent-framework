@@ -4,7 +4,46 @@ import type {
     ToolStep,
 } from "../types";
 
-const API_BASE = "/api";
+const API_BASE = resolveApiBase();
+const API_KEY =
+    import.meta.env.VITE_API_KEY ?? "";
+
+function resolveApiBase(): string {
+
+    const configuredUrl =
+        import.meta.env.VITE_API_URL;
+
+    if (
+        typeof configuredUrl === "string" &&
+        configuredUrl.trim() !== ""
+    ) {
+        return `${configuredUrl.replace(
+            /\/$/,
+            ""
+        )}/api`;
+    }
+
+    return "/api";
+}
+
+function buildAuthHeaders(
+    includeJson = false
+): Record<string, string> {
+
+    const headers: Record<string, string> =
+        {};
+
+    if (includeJson) {
+        headers["Content-Type"] =
+            "application/json";
+    }
+
+    if (API_KEY) {
+        headers["x-api-key"] = API_KEY;
+    }
+
+    return headers;
+}
 
 export function createSessionId(): string {
     return crypto.randomUUID();
@@ -22,10 +61,9 @@ export async function sendChatMessage(
         `${API_BASE}/chat`,
         {
             method: "POST",
-            headers: {
-                "Content-Type":
-                    "application/json",
-            },
+            headers: buildAuthHeaders(
+                true
+            ),
             body: JSON.stringify({
                 sessionId,
                 message,
@@ -55,10 +93,9 @@ export async function respondToApproval(
         `${API_BASE}/approval/${approvalId}`,
         {
             method: "POST",
-            headers: {
-                "Content-Type":
-                    "application/json",
-            },
+            headers: buildAuthHeaders(
+                true
+            ),
             body: JSON.stringify({
                 sessionId,
                 approved,
@@ -82,9 +119,24 @@ export function subscribeToSessionEvents(
     ) => void
 ): () => void {
 
-    const source = new EventSource(
-        `${API_BASE}/events/${sessionId}`
-    );
+    const params =
+        new URLSearchParams();
+
+    if (API_KEY) {
+        params.set(
+            "apiKey",
+            API_KEY
+        );
+    }
+
+    const query =
+        params.toString();
+
+    const url =
+        `${API_BASE}/events/${sessionId}` +
+        (query ? `?${query}` : "");
+
+    const source = new EventSource(url);
 
     source.onmessage = (
         event: MessageEvent

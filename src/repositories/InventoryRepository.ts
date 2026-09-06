@@ -9,4 +9,9 @@ export interface InventoryRepository {
         productId: string,
         quantity: number
     ): Promise<boolean>;
+
+    restoreStock(
+        productId: string,
+        quantity: number
+    ): Promise<boolean>;
 }

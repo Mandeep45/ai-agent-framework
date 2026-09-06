@@ -303,6 +303,7 @@ export function formatToolResult(
             return formatInventory(data);
 
         case "place_order":
+        case "cancel_order":
             return formatOrder(data);
 
         default:

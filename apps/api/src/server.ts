@@ -33,6 +33,10 @@ import {
 } from "./routes/events";
 
 import {
+    apiKeyAuth,
+} from "./middleware/apiKeyAuth";
+
+import {
     freeDevPort,
 } from "./freeDevPort";
 
@@ -103,6 +107,16 @@ async function shutdown(
 
 async function main() {
 
+    if (
+        config.nodeEnv ===
+            "production" &&
+        !config.api.key
+    ) {
+        throw new Error(
+            "API_KEY is required when NODE_ENV=production."
+        );
+    }
+
     await freeDevPort(PORT);
 
     const app = express();
@@ -128,16 +142,19 @@ async function main() {
 
     app.use(
         "/api/chat",
+        apiKeyAuth,
         chatRouter
     );
 
     app.use(
         "/api/approval",
+        apiKeyAuth,
         approvalRouter
     );
 
     app.use(
         "/api/events",
+        apiKeyAuth,
         eventsRouter
     );
 

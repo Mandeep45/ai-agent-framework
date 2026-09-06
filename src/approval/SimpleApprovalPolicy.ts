@@ -9,7 +9,8 @@ export class SimpleApprovalPolicy
     ): boolean {
 
         return (
-            toolCall.toolName === "place_order"
+            toolCall.toolName === "place_order" ||
+            toolCall.toolName === "cancel_order"
         );
     }
 }

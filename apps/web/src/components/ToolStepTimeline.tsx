@@ -20,6 +20,8 @@ const TOOL_LABELS: Record<
         "Fetching order history",
     place_order:
         "Placing order",
+    cancel_order:
+        "Cancelling order",
 };
 
 function getToolLabel(

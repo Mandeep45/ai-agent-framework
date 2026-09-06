@@ -74,4 +74,27 @@ export class PostgresInventoryRepository
             result.rowCount === 1
         );
     }
+
+    async restoreStock(
+        productId: string,
+        quantity: number
+    ): Promise<boolean> {
+
+        const result =
+            await this.db.query(
+                `
+                    UPDATE inventory
+                    SET quantity = quantity + $1
+                    WHERE product_id = $2
+                `,
+                [
+                    quantity,
+                    productId,
+                ]
+            );
+
+        return (
+            result.rowCount === 1
+        );
+    }
 }

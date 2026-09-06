@@ -51,6 +51,18 @@ body {
     color: #9aa8c7;
 }
 
+.chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-secondary {
+    background: #17203a;
+    color: #d4dcf5;
+    border: 1px solid #2a3558;
+}
+
 .status-pill {
     padding: 8px 14px;
     border-radius: 999px;

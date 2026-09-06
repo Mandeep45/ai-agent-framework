@@ -1,0 +1,46 @@
+databases:
+  - name: order-assistant-db
+    plan: free
+    databaseName: order_assistant
+    user: order_assistant
+
+services:
+  - type: web
+    name: order-assistant-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: yarn install --frozen-lockfile && yarn build
+    startCommand: yarn start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: order-assistant-db
+          property: connectionString
+      - key: DATABASE_SSL
+        value: "true"
+      - key: WEB_ORIGIN
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-20b
+      - key: API_KEY
+        generateValue: true
+
+  - type: web
+    name: order-assistant-web
+    runtime: static
+    buildCommand: yarn install --frozen-lockfile && yarn build:web
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_API_KEY
+        fromService:
+          type: web
+          name: order-assistant-api
+          envVarKey: API_KEY

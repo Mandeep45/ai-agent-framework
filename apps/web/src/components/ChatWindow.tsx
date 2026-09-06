@@ -18,6 +18,8 @@ interface ChatWindowProps {
         value: string
     ) => void;
     onSubmit: () => void;
+    onNewChat: () => void;
+    canStartNewChat: boolean;
 }
 
 export function ChatWindow({
@@ -29,6 +31,8 @@ export function ChatWindow({
     input,
     onInputChange,
     onSubmit,
+    onNewChat,
+    canStartNewChat,
 }: ChatWindowProps) {
 
     const inputDisabled =
@@ -64,8 +68,21 @@ export function ChatWindow({
                     </p>
                 </div>
 
-                <div className="status-pill">
-                    {statusText}
+                <div className="chat-header-actions">
+                    <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={onNewChat}
+                        disabled={
+                            !canStartNewChat
+                        }
+                    >
+                        New chat
+                    </button>
+
+                    <div className="status-pill">
+                        {statusText}
+                    </div>
                 </div>
             </header>
 
@@ -85,8 +102,8 @@ export function ChatWindow({
                             order ID?&quot; or
                             &quot;Show order history
                             for customer ABC&quot; or
-                            &quot;What products are
-                            available?&quot;
+                            &quot;Cancel order
+                            ORD-...&quot;
                         </p>
                     </div>
                 )}

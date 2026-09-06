@@ -186,6 +186,37 @@ async function main() {
         }
     );
 
+    server.registerTool(
+        "cancel_order",
+        {
+            description:
+                "Cancel a confirmed order by order ID and restore inventory",
+
+            inputSchema: {
+                orderId: z.string(),
+            },
+        },
+
+        async ({ orderId }) => {
+
+            const order =
+                await orderService.cancelOrder(
+                    orderId
+                );
+
+            return {
+                content: [
+                    {
+                        type: "text" as const,
+                        text: JSON.stringify(
+                            order
+                        ),
+                    },
+                ],
+            };
+        }
+    );
+
     const transport =
         new StdioServerTransport();
 

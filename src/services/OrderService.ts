@@ -3,6 +3,8 @@ import { Order } from "../types/Order";
 import { CustomerNotFoundError } from "../errors/CustomerNotFoundError";
 import { ProductNotFoundError } from "../errors/ProductNotFoundError";
 import { InsufficientStockError } from "../errors/InsufficientStockError";
+import { OrderNotFoundError } from "../errors/OrderNotFoundError";
+import { OrderAlreadyCancelledError } from "../errors/OrderAlreadyCancelledError";
 import {
     CustomerRepository,
 } from "../repositories/CustomerRepository";
@@ -149,5 +151,80 @@ export class OrderService {
         );
 
         return orders;
+    }
+
+    async cancelOrder(
+        orderId: string
+    ): Promise<Order> {
+
+        this.logger.info(
+            "[OrderService] Cancelling order",
+            { orderId }
+        );
+
+        const existingOrder =
+            await this.databaseProvider
+                .repositories
+                .orderRepository
+                .findById(orderId);
+
+        if (!existingOrder) {
+            throw new OrderNotFoundError(
+                orderId
+            );
+        }
+
+        if (
+            existingOrder.status ===
+            "cancelled"
+        ) {
+            throw new OrderAlreadyCancelledError(
+                orderId
+            );
+        }
+
+        const cancelledOrder =
+            await this.databaseProvider
+                .withTransaction(
+                    async repositories => {
+
+                        const restored =
+                            await repositories
+                                .inventoryRepository
+                                .restoreStock(
+                                    existingOrder.productId,
+                                    existingOrder.quantity
+                                );
+
+                        if (!restored) {
+                            throw new ProductNotFoundError(
+                                existingOrder.productId
+                            );
+                        }
+
+                        const updated =
+                            await repositories
+                                .orderRepository
+                                .updateStatus(
+                                    orderId,
+                                    "cancelled"
+                                );
+
+                        if (!updated) {
+                            throw new OrderNotFoundError(
+                                orderId
+                            );
+                        }
+
+                        return updated;
+                    }
+                );
+
+        this.logger.info(
+            "[OrderService] Order cancelled",
+            cancelledOrder
+        );
+
+        return cancelledOrder;
     }
 }

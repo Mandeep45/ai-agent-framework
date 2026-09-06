@@ -85,6 +85,22 @@ function getNumberEnv(
 }
 
 
+function getListenPort(): number {
+
+    if (getOptionalEnv("PORT")) {
+        return getNumberEnv(
+            "PORT",
+            10000
+        );
+    }
+
+    return getNumberEnv(
+        "API_PORT",
+        3001
+    );
+}
+
+
 export const config = {
 
     nodeEnv:
@@ -158,10 +174,11 @@ export const config = {
     },
 
     api: {
-        port:
-            getNumberEnv(
-                "API_PORT",
-                3001
+        port: getListenPort(),
+
+        key:
+            getOptionalEnv(
+                "API_KEY"
             ),
     },
 

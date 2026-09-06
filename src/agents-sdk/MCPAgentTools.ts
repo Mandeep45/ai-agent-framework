@@ -123,6 +123,24 @@ export class MCPAgentTools {
                     )
             );
 
+        const approvalRequiredTools =
+            new Set([
+                "place_order",
+                "cancel_order",
+            ]);
+
+        for (const tool of tools) {
+
+            if (
+                approvalRequiredTools.has(
+                    tool.name
+                )
+            ) {
+                tool.needsApproval =
+                    async () => true;
+            }
+        }
+
         const placeOrderTool =
             tools.find(
                 tool =>
@@ -144,19 +162,12 @@ export class MCPAgentTools {
             );
         }
 
-        /*
-         * Every order placement requires
-         * human approval.
-         */
-        placeOrderTool.needsApproval =
-            async () => true;
-
         this.logger.info(
             "Approval policy configured",
             {
-                toolName:
-                    "place_order",
-
+                tools: [
+                    ...approvalRequiredTools,
+                ],
                 requiresApproval:
                     true,
             }

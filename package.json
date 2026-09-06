@@ -9,6 +9,9 @@
   "workspaces": [
     "apps/*"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "tsx src/index.ts",
     "predev:api": "tsx scripts/free-port.ts 3001",

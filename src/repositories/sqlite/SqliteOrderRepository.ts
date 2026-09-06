@@ -1,10 +1,36 @@
 import type Database from "better-sqlite3";
 
-import { Order } from "../../types/Order";
+import { Order, OrderStatus } from "../../types/Order";
 import {
     CreateOrderInput,
     OrderRepository,
 } from "../OrderRepository";
+
+
+function mapOrderRow(
+    row: {
+        id: string;
+        customer_id: string;
+        product_id: string;
+        quantity: number;
+        status: OrderStatus;
+        created_at: string;
+    }
+): Order {
+
+    return {
+        id: row.id,
+        customerId:
+            row.customer_id,
+        productId:
+            row.product_id,
+        quantity:
+            row.quantity,
+        status: row.status,
+        createdAt:
+            row.created_at,
+    };
+}
 
 
 export class SqliteOrderRepository
@@ -50,6 +76,39 @@ export class SqliteOrderRepository
         };
     }
 
+    async findById(
+        orderId: string
+    ): Promise<Order | null> {
+
+        const row =
+            this.db.prepare(`
+                SELECT
+                    id,
+                    customer_id,
+                    product_id,
+                    quantity,
+                    status,
+                    created_at
+                FROM orders
+                WHERE id = ?
+            `).get(orderId) as
+                | {
+                    id: string;
+                    customer_id: string;
+                    product_id: string;
+                    quantity: number;
+                    status: OrderStatus;
+                    created_at: string;
+                }
+                | undefined;
+
+        if (!row) {
+            return null;
+        }
+
+        return mapOrderRow(row);
+    }
+
     async findByCustomerId(
         customerId: string
     ): Promise<Order[]> {
@@ -71,21 +130,32 @@ export class SqliteOrderRepository
                 customer_id: string;
                 product_id: string;
                 quantity: number;
-                status: "confirmed";
+                status: OrderStatus;
                 created_at: string;
             }>;
 
-        return rows.map(row => ({
-            id: row.id,
-            customerId:
-                row.customer_id,
-            productId:
-                row.product_id,
-            quantity:
-                row.quantity,
-            status: row.status,
-            createdAt:
-                row.created_at,
-        }));
+        return rows.map(mapOrderRow);
+    }
+
+    async updateStatus(
+        orderId: string,
+        status: OrderStatus
+    ): Promise<Order | null> {
+
+        const result =
+            this.db.prepare(`
+                UPDATE orders
+                SET status = ?
+                WHERE id = ?
+            `).run(
+                status,
+                orderId
+            );
+
+        if (result.changes !== 1) {
+            return null;
+        }
+
+        return this.findById(orderId);
     }
 }

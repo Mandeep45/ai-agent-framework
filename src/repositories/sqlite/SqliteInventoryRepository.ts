@@ -67,4 +67,24 @@ export class SqliteInventoryRepository
             result.changes === 1
         );
     }
+
+    async restoreStock(
+        productId: string,
+        quantity: number
+    ): Promise<boolean> {
+
+        const result =
+            this.db.prepare(`
+                UPDATE inventory
+                SET quantity = quantity + ?
+                WHERE product_id = ?
+            `).run(
+                quantity,
+                productId
+            );
+
+        return (
+            result.changes === 1
+        );
+    }
 }
