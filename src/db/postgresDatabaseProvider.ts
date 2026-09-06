@@ -27,6 +27,9 @@ import {
 import {
     PostgresProductRepository,
 } from "../repositories/postgres/PostgresProductRepository";
+import {
+    PostgresChatRepository,
+} from "../repositories/postgres/PostgresChatRepository";
 
 
 function createPostgresRepositories(
@@ -48,6 +51,10 @@ function createPostgresRepositories(
             ),
         productRepository:
             new PostgresProductRepository(
+                db
+            ),
+        chatRepository:
+            new PostgresChatRepository(
                 db
             ),
     };
@@ -210,6 +217,8 @@ export async function resetPostgresData(
 
         await pool.query(`
             TRUNCATE TABLE
+                chat_messages,
+                chat_sessions,
                 orders,
                 inventory,
                 products,

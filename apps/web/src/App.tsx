@@ -4,22 +4,42 @@ import {
 } from "react";
 
 import {
+    clearStoredSessionId,
     createSessionId,
+    loadStoredSessionId,
     parseApprovalEvent,
     parseToolCallEvent,
     parseToolResultEvent,
     respondToApproval,
     sendChatMessage,
+    storeSessionId,
     subscribeToSessionEvents,
 } from "./api/client";
+
+import {
+    fetchSessionMessages,
+} from "./api/sessions";
 
 import {
     ApprovalModal,
 } from "./components/ApprovalModal";
 
 import {
+    AppNav,
+    type AppView,
+} from "./components/AppNav";
+
+import {
     ChatWindow,
 } from "./components/ChatWindow";
+
+import {
+    ColdStartBanner,
+} from "./components/ColdStartBanner";
+
+import {
+    OrderHistoryPage,
+} from "./components/OrderHistoryPage";
 
 import type {
     ChatMessage,
@@ -68,10 +88,21 @@ function upsertToolStep(
     return updated;
 }
 
+function resolveInitialSessionId(): string {
+
+    return (
+        loadStoredSessionId() ??
+        createSessionId()
+    );
+}
+
 export default function App() {
 
+    const [activeView, setActiveView] =
+        useState<AppView>("chat");
+
     const [sessionId, setSessionId] =
-        useState(createSessionId);
+        useState(resolveInitialSessionId);
 
     const [messages, setMessages] =
         useState<ChatMessage[]>([]);
@@ -88,6 +119,12 @@ export default function App() {
     const [isLoading, setIsLoading] =
         useState(false);
 
+    const [isWakingServer, setIsWakingServer] =
+        useState(false);
+
+    const [isLoadingHistory, setIsLoadingHistory] =
+        useState(true);
+
     const [pendingApproval, setPendingApproval] =
         useState<PendingApproval | null>(
             null
@@ -95,6 +132,48 @@ export default function App() {
 
     const [isSubmittingApproval, setIsSubmittingApproval] =
         useState(false);
+
+    useEffect(() => {
+        storeSessionId(sessionId);
+    }, [sessionId]);
+
+    useEffect(() => {
+
+        let cancelled = false;
+
+        async function loadHistory() {
+
+            setIsLoadingHistory(true);
+
+            try {
+
+                const history =
+                    await fetchSessionMessages(
+                        sessionId
+                    );
+
+                if (!cancelled) {
+                    setMessages(history);
+                }
+
+            } catch {
+                if (!cancelled) {
+                    setMessages([]);
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoadingHistory(false);
+                }
+            }
+        }
+
+        void loadHistory();
+
+        return () => {
+            cancelled = true;
+        };
+
+    }, [sessionId]);
 
     useEffect(() => {
 
@@ -211,6 +290,7 @@ export default function App() {
                         setStatusText(
                             "Ready"
                         );
+                        setIsWakingServer(false);
                     }
 
                     if (
@@ -220,6 +300,7 @@ export default function App() {
                         setStatusText(
                             "Error"
                         );
+                        setIsWakingServer(false);
                     }
                 }
             );
@@ -236,7 +317,8 @@ export default function App() {
         if (
             !message ||
             isLoading ||
-            pendingApproval
+            pendingApproval ||
+            isLoadingHistory
         ) {
             return;
         }
@@ -252,8 +334,9 @@ export default function App() {
         setInput("");
         setToolSteps([]);
         setIsLoading(true);
+        setIsWakingServer(true);
         setStatusText(
-            "Sending request..."
+            "Connecting to server..."
         );
 
         try {
@@ -294,6 +377,7 @@ export default function App() {
         } finally {
 
             setIsLoading(false);
+            setIsWakingServer(false);
         }
     }
 
@@ -350,35 +434,65 @@ export default function App() {
             return;
         }
 
-        setSessionId(
-            createSessionId()
-        );
+        const nextSessionId =
+            createSessionId();
+
+        clearStoredSessionId();
+        storeSessionId(nextSessionId);
+
+        setSessionId(nextSessionId);
         setMessages([]);
         setToolSteps([]);
         setInput("");
         setStatusText("Ready");
         setPendingApproval(null);
+        setIsLoadingHistory(false);
     }
 
     return (
         <div className="app">
-            <ChatWindow
-                messages={messages}
-                toolSteps={toolSteps}
-                statusText={statusText}
-                isLoading={isLoading}
-                isAwaitingApproval={
-                    pendingApproval !== null
-                }
-                input={input}
-                onInputChange={setInput}
-                onSubmit={handleSend}
-                onNewChat={handleNewChat}
-                canStartNewChat={
-                    !isLoading &&
-                    !isSubmittingApproval
+            <AppNav
+                activeView={activeView}
+                onViewChange={setActiveView}
+            />
+
+            <ColdStartBanner
+                visible={
+                    isWakingServer ||
+                    (isLoadingHistory &&
+                        activeView === "chat")
                 }
             />
+
+            {activeView === "chat" ? (
+                <ChatWindow
+                    messages={messages}
+                    toolSteps={toolSteps}
+                    statusText={
+                        isLoadingHistory
+                            ? "Loading chat history..."
+                            : statusText
+                    }
+                    isLoading={
+                        isLoading ||
+                        isLoadingHistory
+                    }
+                    isAwaitingApproval={
+                        pendingApproval !== null
+                    }
+                    input={input}
+                    onInputChange={setInput}
+                    onSubmit={handleSend}
+                    onNewChat={handleNewChat}
+                    canStartNewChat={
+                        !isLoading &&
+                        !isSubmittingApproval &&
+                        !isLoadingHistory
+                    }
+                />
+            ) : (
+                <OrderHistoryPage />
+            )}
 
             {pendingApproval && (
                 <ApprovalModal

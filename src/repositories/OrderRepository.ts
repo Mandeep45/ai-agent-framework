@@ -1,4 +1,7 @@
 import { Order } from "../types/Order";
+import {
+    OrderWithDetails,
+} from "../types/OrderWithDetails";
 
 export interface CreateOrderInput {
     customerId: string;
@@ -23,4 +26,8 @@ export interface OrderRepository {
         orderId: string,
         status: Order["status"]
     ): Promise<Order | null>;
+
+    findAllWithDetails(
+        customerId?: string
+    ): Promise<OrderWithDetails[]>;
 }

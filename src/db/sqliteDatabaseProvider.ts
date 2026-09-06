@@ -31,6 +31,9 @@ import {
     SqliteProductRepository,
 } from "../repositories/sqlite/SqliteProductRepository";
 import {
+    SqliteChatRepository,
+} from "../repositories/sqlite/SqliteChatRepository";
+import {
     getProjectRoot,
 } from "../utils/projectRoot";
 
@@ -123,6 +126,10 @@ function createSqliteRepositories(
             new SqliteProductRepository(
                 db
             ),
+        chatRepository:
+            new SqliteChatRepository(
+                db
+            ),
     };
 }
 
@@ -210,6 +217,8 @@ export function resetSqliteData(): void {
     db.exec(SQLITE_SCHEMA);
 
     db.exec(`
+        DELETE FROM chat_messages;
+        DELETE FROM chat_sessions;
         DELETE FROM orders;
         DELETE FROM inventory;
         DELETE FROM products;

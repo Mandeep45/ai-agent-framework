@@ -10,6 +10,9 @@ import {
 import {
     ProductRepository,
 } from "../repositories/ProductRepository";
+import {
+    ChatRepository,
+} from "../repositories/ChatRepository";
 
 
 export type DatabaseKind =
@@ -25,6 +28,8 @@ export interface DatabaseRepositories {
         OrderRepository;
     productRepository:
         ProductRepository;
+    chatRepository:
+        ChatRepository;
 }
 
 export interface DatabaseProvider {

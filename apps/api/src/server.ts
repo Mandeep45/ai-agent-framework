@@ -33,6 +33,14 @@ import {
 } from "./routes/events";
 
 import {
+    ordersRouter,
+} from "./routes/orders";
+
+import {
+    sessionsRouter,
+} from "./routes/sessions";
+
+import {
     apiKeyAuth,
 } from "./middleware/apiKeyAuth";
 
@@ -212,6 +220,18 @@ async function main() {
         "/api/events",
         apiKeyAuth,
         eventsRouter
+    );
+
+    app.use(
+        "/api/orders",
+        apiKeyAuth,
+        ordersRouter
+    );
+
+    app.use(
+        "/api/sessions",
+        apiKeyAuth,
+        sessionsRouter
     );
 
     await agentAppService.initialize();

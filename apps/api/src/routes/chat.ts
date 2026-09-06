@@ -8,6 +8,10 @@ import {
     agentAppService,
 } from "../services/AgentAppService";
 
+import {
+    getChatRepository,
+} from "../services/domainServices";
+
 
 export const chatRouter =
     Router();
@@ -39,11 +43,29 @@ chatRouter.post(
 
         try {
 
+            const trimmedMessage =
+                message.trim();
+
+            const chatRepository =
+                await getChatRepository();
+
+            await chatRepository.appendMessage(
+                sessionId,
+                "user",
+                trimmedMessage
+            );
+
             const result =
                 await agentAppService.runChat(
                     sessionId,
-                    message.trim()
+                    trimmedMessage
                 );
+
+            await chatRepository.appendMessage(
+                sessionId,
+                "assistant",
+                result.output
+            );
 
             res.json(result);
 

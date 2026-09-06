@@ -4,83 +4,57 @@ import type {
     ToolStep,
 } from "../types";
 
-const API_BASE = resolveApiBase();
-const API_KEY =
-    import.meta.env.VITE_API_KEY ?? "";
-
-function resolveApiBase(): string {
-
-    const configuredUrl =
-        import.meta.env.VITE_API_URL;
-
-    if (
-        typeof configuredUrl === "string" &&
-        configuredUrl.trim() !== ""
-    ) {
-        return `${configuredUrl.replace(
-            /\/$/,
-            ""
-        )}/api`;
-    }
-
-    return "/api";
-}
-
-function buildAuthHeaders(
-    includeJson = false
-): Record<string, string> {
-
-    const headers: Record<string, string> =
-        {};
-
-    if (includeJson) {
-        headers["Content-Type"] =
-            "application/json";
-    }
-
-    if (API_KEY) {
-        headers["x-api-key"] = API_KEY;
-    }
-
-    return headers;
-}
+import {
+    buildAuthHeaders,
+    fetchWithColdStart,
+    getApiBase,
+    getFrontendConfigError,
+} from "./http";
 
 export function createSessionId(): string {
     return crypto.randomUUID();
 }
 
-function getFrontendConfigError():
+const SESSION_STORAGE_KEY =
+    "order-assistant-session-id";
+
+export function loadStoredSessionId():
     string | null {
 
-    const hostname =
-        window.location.hostname;
-
-    const isLocal =
-        hostname === "localhost" ||
-        hostname === "127.0.0.1";
-
-    if (
-        !isLocal &&
-        API_BASE === "/api"
-    ) {
+    try {
         return (
-            "Frontend is not configured with VITE_API_URL. " +
-            "Set it on Render to your API URL (e.g. https://order-assistant-api.onrender.com) " +
-            "and redeploy the web service."
+            localStorage.getItem(
+                SESSION_STORAGE_KEY
+            ) ?? null
         );
+    } catch {
+        return null;
     }
+}
 
-    if (
-        !isLocal &&
-        !API_KEY
-    ) {
-        return (
-            "Frontend is missing VITE_API_KEY. " +
-            "Link it to the API service API_KEY on Render and redeploy the web service."
+export function storeSessionId(
+    sessionId: string
+): void {
+
+    try {
+        localStorage.setItem(
+            SESSION_STORAGE_KEY,
+            sessionId
         );
+    } catch {
+        // Ignore storage errors.
     }
+}
 
-    return null;
+export function clearStoredSessionId(): void {
+
+    try {
+        localStorage.removeItem(
+            SESSION_STORAGE_KEY
+        );
+    } catch {
+        // Ignore storage errors.
+    }
 }
 
 export async function sendChatMessage(
@@ -99,13 +73,10 @@ export async function sendChatMessage(
     }
 
     const url =
-        `${API_BASE}/chat`;
+        `${getApiBase()}/chat`;
 
-    let response: Response;
-
-    try {
-
-        response = await fetch(
+    const response =
+        await fetchWithColdStart(
             url,
             {
                 method: "POST",
@@ -118,15 +89,6 @@ export async function sendChatMessage(
                 }),
             }
         );
-
-    } catch (error) {
-
-        throw new Error(
-            `Cannot reach API at ${url}. ` +
-                `Set WEB_ORIGIN on the API to ${window.location.origin} ` +
-                `and VITE_API_URL on the web to your API URL, then redeploy both.`
-        );
-    }
 
     const data = await response.json();
 
@@ -146,19 +108,20 @@ export async function respondToApproval(
     approved: boolean
 ): Promise<void> {
 
-    const response = await fetch(
-        `${API_BASE}/approval/${approvalId}`,
-        {
-            method: "POST",
-            headers: buildAuthHeaders(
-                true
-            ),
-            body: JSON.stringify({
-                sessionId,
-                approved,
-            }),
-        }
-    );
+    const response =
+        await fetchWithColdStart(
+            `${getApiBase()}/approval/${approvalId}`,
+            {
+                method: "POST",
+                headers: buildAuthHeaders(
+                    true
+                ),
+                body: JSON.stringify({
+                    sessionId,
+                    approved,
+                }),
+            }
+        );
 
     if (!response.ok) {
         const data = await response.json();
@@ -179,10 +142,13 @@ export function subscribeToSessionEvents(
     const params =
         new URLSearchParams();
 
-    if (API_KEY) {
+    const apiKey =
+        import.meta.env.VITE_API_KEY ?? "";
+
+    if (apiKey) {
         params.set(
             "apiKey",
-            API_KEY
+            apiKey
         );
     }
 
@@ -190,7 +156,7 @@ export function subscribeToSessionEvents(
         params.toString();
 
     const url =
-        `${API_BASE}/events/${sessionId}` +
+        `${getApiBase()}/events/${sessionId}` +
         (query ? `?${query}` : "");
 
     const source = new EventSource(url);

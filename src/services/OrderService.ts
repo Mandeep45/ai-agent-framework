@@ -1,5 +1,8 @@
 import { Logger } from "../logger/Logger";
 import { Order } from "../types/Order";
+import {
+    OrderWithDetails,
+} from "../types/OrderWithDetails";
 import { CustomerNotFoundError } from "../errors/CustomerNotFoundError";
 import { ProductNotFoundError } from "../errors/ProductNotFoundError";
 import { InsufficientStockError } from "../errors/InsufficientStockError";
@@ -144,6 +147,49 @@ export class OrderService {
 
         this.logger.info(
             "[OrderService] Order history fetched",
+            {
+                customerId,
+                count: orders.length,
+            }
+        );
+
+        return orders;
+    }
+
+    async listOrders(
+        customerId?: string
+    ): Promise<OrderWithDetails[]> {
+
+        this.logger.info(
+            "[OrderService] Listing orders",
+            { customerId }
+        );
+
+        if (customerId) {
+
+            const customer =
+                await this.customerRepository
+                    .findById(
+                        customerId
+                    );
+
+            if (!customer) {
+                throw new CustomerNotFoundError(
+                    customerId
+                );
+            }
+        }
+
+        const orders =
+            await this.databaseProvider
+                .repositories
+                .orderRepository
+                .findAllWithDetails(
+                    customerId
+                );
+
+        this.logger.info(
+            "[OrderService] Orders listed",
             {
                 customerId,
                 count: orders.length,
