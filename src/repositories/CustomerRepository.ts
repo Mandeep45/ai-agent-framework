@@ -4,4 +4,6 @@ export interface CustomerRepository {
     findById(
         customerId: string
     ): Promise<Customer | null>;
+
+    listAll(): Promise<Customer[]>;
 }

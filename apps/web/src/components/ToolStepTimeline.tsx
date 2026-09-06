@@ -12,6 +12,8 @@ const TOOL_LABELS: Record<
 > = {
     get_customer:
         "Looking up customer",
+    list_customers:
+        "Listing customers",
     get_inventory:
         "Checking inventory",
     list_products:

@@ -24,6 +24,10 @@ const AGENT_INSTRUCTIONS =
     "what products are available or wants " +
     "to browse the catalog. " +
 
+    "Use list_customers when the user asks " +
+    "for all customers, the customer list, " +
+    "or wants to browse customers. " +
+
     "Use get_order_history when the user asks " +
     "about past orders, order IDs, or order " +
     "status for a customer. " +

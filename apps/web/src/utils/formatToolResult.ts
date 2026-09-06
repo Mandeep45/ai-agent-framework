@@ -176,6 +176,52 @@ function formatOrderHistory(
         .join("\n");
 }
 
+function formatCustomerList(
+    payload: unknown
+): string {
+
+    if (!Array.isArray(payload)) {
+        return "No customers available.";
+    }
+
+    if (payload.length === 0) {
+        return "No customers available.";
+    }
+
+    return payload
+        .map(item => {
+            const customer =
+                item as Record<
+                    string,
+                    unknown
+                >;
+
+            const name =
+                String(
+                    customer.name ??
+                        customer.id ??
+                        "Customer"
+                );
+
+            const id =
+                String(customer.id ?? "");
+
+            const email =
+                String(customer.email ?? "");
+
+            if (id && email) {
+                return `${name} (${id}) — ${email}`;
+            }
+
+            if (id) {
+                return `${name} (${id})`;
+            }
+
+            return name;
+        })
+        .join("\n");
+}
+
 function formatProductList(
     payload: unknown
 ): string {
@@ -261,6 +307,12 @@ export function formatToolResult(
 
         if (toolName === "list_products") {
             return formatProductList(
+                payload
+            );
+        }
+
+        if (toolName === "list_customers") {
+            return formatCustomerList(
                 payload
             );
         }

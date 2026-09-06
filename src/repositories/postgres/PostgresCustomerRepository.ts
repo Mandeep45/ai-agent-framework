@@ -33,4 +33,18 @@ export class PostgresCustomerRepository
             result.rows[0] ?? null
         );
     }
+
+    async listAll(): Promise<Customer[]> {
+
+        const result =
+            await this.db.query<Customer>(
+                `
+                    SELECT id, name, email
+                    FROM customers
+                    ORDER BY id
+                `
+            );
+
+        return result.rows;
+    }
 }

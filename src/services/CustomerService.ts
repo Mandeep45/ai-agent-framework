@@ -46,4 +46,23 @@ export class CustomerService {
 
         return customer;
     }
+
+    async listCustomers():
+        Promise<Customer[]> {
+
+        this.logger.info(
+            "[CustomerService] Listing customers"
+        );
+
+        const customers =
+            await this.customerRepository
+                .listAll();
+
+        this.logger.info(
+            "[CustomerService] Customers listed",
+            { count: customers.length }
+        );
+
+        return customers;
+    }
 }

@@ -29,4 +29,16 @@ export class SqliteCustomerRepository
 
         return row ?? null;
     }
+
+    async listAll(): Promise<Customer[]> {
+
+        const rows =
+            this.db.prepare(`
+                SELECT id, name, email
+                FROM customers
+                ORDER BY id
+            `).all() as Customer[];
+
+        return rows;
+    }
 }

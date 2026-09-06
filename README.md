@@ -5,7 +5,7 @@ An educational AI agent framework built from scratch with TypeScript, plus a ful
 ## Features
 
 - Chat with an AI order assistant
-- MCP tools: customer lookup, inventory, product list, order history, get order, place order, cancel order
+- MCP tools: customer lookup, customer list, inventory, product list, order history, get order, place order, cancel order
 - Human approval for sensitive actions (`place_order`, `cancel_order`)
 - Live tool-step timeline via SSE
 - SQLite for local dev, PostgreSQL for production

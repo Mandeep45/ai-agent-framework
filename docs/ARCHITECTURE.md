@@ -58,6 +58,7 @@ Learning code imports from `src/` but is excluded from the production TypeScript
 | Tool | Approval required | Description |
 |------|-------------------|-------------|
 | `get_customer` | No | Lookup customer by ID |
+| `list_customers` | No | All customers |
 | `get_inventory` | No | Stock for a product |
 | `list_products` | No | All products + stock |
 | `get_order_history` | No | Orders for a customer |

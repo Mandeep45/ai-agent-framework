@@ -70,6 +70,31 @@ async function main() {
     );
 
     server.registerTool(
+        "list_customers",
+        {
+            description:
+                "List all customers",
+        },
+
+        async () => {
+
+            const customers =
+                await customerService.listCustomers();
+
+            return {
+                content: [
+                    {
+                        type: "text" as const,
+                        text: JSON.stringify(
+                            customers
+                        ),
+                    },
+                ],
+            };
+        }
+    );
+
+    server.registerTool(
         "get_inventory",
         {
             description:

@@ -1,5 +1,6 @@
 const ALLOWED_MCP_TOOLS = new Set([
     "get_customer",
+    "list_customers",
     "get_inventory",
     "list_products",
     "get_order_history",
