@@ -12,6 +12,10 @@ import {
 } from "../config";
 
 import {
+    getMcpServerEnv,
+} from "../config/mcpDefaults";
+
+import {
     validateMcpTools,
 } from "../security/ToolSecurityPolicy";
 
@@ -40,6 +44,9 @@ export class MCPAgentTools {
 
                 timeout:
                     config.mcp.timeoutMs,
+
+                env:
+                    getMcpServerEnv(),
             });
     }
 

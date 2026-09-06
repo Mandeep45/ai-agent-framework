@@ -45,3 +45,31 @@ export function getDefaultMcpServerPath():
         "server.ts"
     );
 }
+
+
+export function getMcpServerEnv():
+    Record<string, string> {
+
+    /*
+     * MCP stdio only inherits PATH/HOME/etc. by default.
+     * Pass through app env vars (DATABASE_URL, GROQ_API_KEY, …).
+     */
+    const env: Record<string, string> =
+        {};
+
+    for (const [
+        key,
+        value,
+    ] of Object.entries(
+        process.env
+    )) {
+
+        if (
+            typeof value === "string"
+        ) {
+            env[key] = value;
+        }
+    }
+
+    return env;
+}

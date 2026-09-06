@@ -111,7 +111,9 @@ export const config = {
 
     groq: {
         apiKey:
-            getEnv("GROQ_API_KEY"),
+            getOptionalEnv(
+                "GROQ_API_KEY"
+            ) ?? "",
 
         model:
             getEnv(
